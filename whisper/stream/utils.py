@@ -10,21 +10,35 @@ def wake(handle, pcm_bytes):
     return handle.process(pcm_ints) >= 0
 
 def recognition(pipe, audio_buffer,rate,denoise=False):
-    if not audio_buffer:
+    print(f"Denoise settings:{denoise}")
+    if audio_buffer is None or len(audio_buffer)==0:
+        print("Invalid input detected...")
         return ""
     # set "denoise=True" to activate denoise function
     if denoise:
-        clean_audio=denoise(audio_buffer,rate)
-    audio_float32 = np.concatenate(clean_audio).astype(np.float32) / 32768.0
-    print("AI is thinking...")
-    result = pipe.generate(audio_float32.tolist())
+        audio_ready=denoise(audio_buffer,rate)
+    else:
+        audio_ready=audio_buffer
+    audio_float32 = audio_ready.astype(np.float32) / 32768.0
+    try:
+        result = pipe.generate(audio_float32.tolist())
+        print(f"Text generated:{result}")
+    except Exception as e:
+        print(f"Error occurred:{e}")
+        import traceback
+        traceback.print_exc()
     return result.texts[0]
 
 def voice_to_text(frames,rate):
     whisper=os.environ.get("WHISPER_DIR")
-    pipe=openvino_genai.WisperPipeline(whisper,"GPU")
-    # turn on denoise function here if needed
-    text=recognition(pipe,frames,rate)
+    print("Model path found..." if whisper else "Model not found...")
+    pipe=openvino_genai.WhisperPipeline(whisper,"GPU")
+    if pipe != None:
+        # turn on denoise function here if needed
+        print("Whisper initiated...")
+        text=recognition(pipe,frames,rate)
+    else:
+        print("Pipe Invalid...")
     return text
 
 def denoise(audio_int16,rate):
