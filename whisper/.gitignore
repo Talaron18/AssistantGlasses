@@ -3,3 +3,4 @@
 *.pv
 *.ppn
 whisper-base/
+*.pyc

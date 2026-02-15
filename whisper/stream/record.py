@@ -25,11 +25,14 @@ def stream():
         while True:
             audio_data=streaming.read(audio.frame_length,exception_on_overflow=False)
             if wake(audio,audio_data):
-                print("Heil Hitler!")
-                text=detection(streaming,audio)
-                print(text)
+                print("On your command")
+                #text=detection(streaming,audio)
+                #print(text)
     finally:
         streaming.stop_stream()
         streaming.close()
         pa.terminate()
         audio.delete()
+
+if __name__=="__main__":
+    stream()
