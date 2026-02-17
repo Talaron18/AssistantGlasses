@@ -5,7 +5,7 @@ This is a simple implementation of OpenAI's speech-to-text model [whisper-base](
 ```mermaid
 graph TD
     %% Main Project Root
-    Root[whisper/] --> Stream[stream/]
+    Root[speech_module/] --> Stream[stream/]
     Root --> Tests[tests/]
     Root --> Install(install.py)
     Root --> RM(README.md)
