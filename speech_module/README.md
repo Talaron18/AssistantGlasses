@@ -25,7 +25,9 @@ graph TD
     style Stream fill:#eef,stroke:#333
     style Tests fill:#eef,stroke:#333
 ```
+### Details
+Download [language models](https://github.com/Picovoice/porcupine/tree/master/lib/common) from porcupine in advance for "wake word" operation. You may also need to visit the official website for [Picovoice](https://picovoice.ai/) to apply for an access key to use their products.
 ***
-Download wake_word.py to try "keyword wake up".
+Run [wake_word.py](tests\wake_word.py) to try "keyword wake up".
 
-Download speech_recognition.py to try ASR.
+Run [speech_recognition.py](tests\speech_recognition.py) to try ASR.
