@@ -2,7 +2,7 @@ import sys
 import os
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../../..')))
 import pvcobra
-from AssistantGlasses.whisper.stream.activate import detection
+from AssistantGlasses.speech_module.stream.activate import detection
 from pydub import AudioSegment as pd
 import os
 import pyaudio
@@ -37,7 +37,7 @@ def speech_test(path):
         devices=pvcobra.available_devices()
         print(devices)
         text=detection(stream,audio)
-        print(text)
+        print(f'Text generated: {text}')
     except Exception as e:
         print("Operation suspended...")
         print(f"Error occurred:{e}")
@@ -51,10 +51,7 @@ def speech_test(path):
 
 if __name__=="__main__":
     load_dotenv()
-    test_path=os.environ.get("TEST_DIR")
+    test_path=os.environ.get("TEST_EN")
     # checking input file path
     print("Vocal file found..." if bool(test_path) else "Path not found...")
     speech_test(test_path)
-"""
-    read relavant API document + test the audio on models deployed on huggingface
-"""

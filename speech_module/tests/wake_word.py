@@ -2,7 +2,7 @@ import pyaudio
 import sys
 import os
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../../..')))
-from AssistantGlasses.whisper.stream.utils import wake
+from AssistantGlasses.speech_module.stream.utils import wake
 from dotenv import load_dotenv
 import pvporcupine
 

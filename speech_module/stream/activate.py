@@ -7,7 +7,7 @@ import numpy as np
 from pydub import AudioSegment
 import sys
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../../..')))
-from AssistantGlasses.whisper.stream.utils import voice_to_text
+from AssistantGlasses.speech_module.stream.utils import voice_to_text
 from dotenv import load_dotenv
 
 def detection(streaming,audio):
@@ -61,7 +61,7 @@ def loop2(cobra,streaming,length,audio,rate):
     bytes=length*2
     for i in range(0,len(data),bytes):
         chunk=data[i:i+bytes]
-        # checking if audio is loaded successfully
+        # play and check if audio is loaded successfully, delete the next line after checking
         streaming.write(chunk)
         if len(chunk)==bytes:
             pcm=struct.unpack_from("h"*length,chunk)
