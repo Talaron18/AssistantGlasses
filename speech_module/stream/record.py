@@ -22,7 +22,7 @@ def stream():
         frames_per_buffer=audio.frame_length
     )
     if streaming !=None:
-        print("system initiated...")
+        print("System initiated...")
     try:
         while True:
             audio_data=streaming.read(audio.frame_length,exception_on_overflow=False)
@@ -31,13 +31,10 @@ def stream():
                 text=detection(streaming,audio)
                 print(text)
     except:
-        print("stop recording...")
+        print("Stop recording...")
     finally:
         # clear cache occupancy
         streaming.stop_stream()
         streaming.close()
         pa.terminate()
         audio.delete()
-
-if __name__=="__main__":
-    stream()

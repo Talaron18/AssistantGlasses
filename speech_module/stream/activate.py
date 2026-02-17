@@ -15,7 +15,7 @@ def detection(streaming,audio):
     cobra=pvcobra.create(access_key=os.environ.get('PORCUPINE_KEY'),device="best") 
     print("Agent in command...")
     if isinstance(audio,pvporcupine.Porcupine):
-        print("Atarting realtime recognition...")
+        print("Starting realtime recognition...")
         rate=audio.sample_rate
         length=audio.frame_length
         text=loop1(cobra,streaming,length,rate)
