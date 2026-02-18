@@ -8,7 +8,7 @@ from AssistantGlasses.Agent.utils import to_base64
 
 class CoreAgent():
     def __init__(self,role="default"):
-        role_setting=config.SYSTEM_SETTING[“role”]
+        role_setting=config.SYSTEM_SETTING[role]
         self.conversation=[
             {
                 "role":"system",
