@@ -33,7 +33,7 @@ class CoreAgent():
             messages=self.conversation,
             stream=True,
             thinking={
-                "type":"enabled" # set this to "disabled" if speed is too slow
+                "type":"disabled" # set this to "disabled" if speed is too slow
             }
         )
         memory=""
