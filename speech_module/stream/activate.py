@@ -7,7 +7,7 @@ import numpy as np
 from pydub import AudioSegment
 import sys
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../../..')))
-from AssistantGlasses.speech_module.stream.utils import voice_to_text
+from AssistantGlasses.speech_module.stream.utils import voice_to_text,manual_close,setup_button
 from dotenv import load_dotenv
 
 def detection(streaming,audio):
@@ -18,7 +18,7 @@ def detection(streaming,audio):
         print("Starting realtime recognition...")
         rate=audio.sample_rate
         length=audio.frame_length
-        text=loop1(cobra,streaming,length,rate)
+        text=loop1(cobra,streaming,length,rate) # add audio input if using loop3
     elif isinstance(audio,AudioSegment):
         print("Starting audio recognition...")
         rate=audio.frame_rate
@@ -29,7 +29,7 @@ def detection(streaming,audio):
     cobra.delete()
     return text
 
-# inner loop for realtime speech2text 
+# inner loop for realtime speech2text
 def loop1(cobra,streaming,length,rate):
     last_detection_time=time.time()
     load_dotenv()
@@ -77,4 +77,38 @@ def loop2(cobra,streaming,length,audio,rate):
             break 
     audio_int16=np.frombuffer(data,dtype=np.int16)
     text=voice_to_text(audio_int16,rate)
+    return text
+
+""" 
+    loop3: inner loop for realtime speech2text + voice termination
+    BE AWARE!!! This loop may be filled with bugs as it has NOT BEEN TESTED
+"""
+
+def loop3(cobra,streaming,audio,length,rate,voice_termination=False):
+    last_detection_time=time.time()
+    load_dotenv()
+    SILENCE_THRESHOLD=os.environ.get('SILENCE_THRESHOLD')
+    SPEECH_SENSITIVITY=os.environ.get('SPEECH_SENSITIVITY')
+    audio_buffer=[]
+    blank=True
+    while True:
+        #print(streaming.is_active())
+        pcm_bytes=streaming.read(length)
+        pcm_ints=struct.unpack_from("h"*length,pcm_bytes)
+        audio_buffer.append(np.frombuffer(pcm_bytes,dtype=np.int16))
+        speech_detection=cobra.process(pcm_ints)
+        if speech_detection>float(SPEECH_SENSITIVITY):
+            blank=False
+            last_detection_time=time.time()
+        if time.time()-last_detection_time>float(SILENCE_THRESHOLD):
+            break
+        if voice_termination:
+            button_req=setup_button("***",18)
+            if manual_close(audio, pcm_bytes, mode="voice", button_request=button_req):
+                break
+    audio_buffer=np.concatenate(audio_buffer)
+    if not blank:
+        text=voice_to_text(audio_buffer,rate)
+    else:
+        text="Standing by..."
     return text
