@@ -36,19 +36,23 @@ def loop1(cobra,streaming,length,rate):
     SILENCE_THRESHOLD=os.environ.get('SILENCE_THRESHOLD')
     SPEECH_SENSITIVITY=os.environ.get('SPEECH_SENSITIVITY')
     audio_buffer=[]
+    blank=True
     while True:
-        print(streaming.is_active())
+        #print(streaming.is_active())
         pcm_bytes=streaming.read(length)
         pcm_ints=struct.unpack_from("h"*length,pcm_bytes)
         audio_buffer.append(np.frombuffer(pcm_bytes,dtype=np.int16))
         speech_detection=cobra.process(pcm_ints)
         if speech_detection>float(SPEECH_SENSITIVITY):
+            blank=False
             last_detection_time=time.time()
         if time.time()-last_detection_time>float(SILENCE_THRESHOLD):
-            print("Standing by...")
             break
     audio_buffer=np.concatenate(audio_buffer)
-    text=voice_to_text(audio_buffer,rate)
+    if not blank:
+        text=voice_to_text(audio_buffer,rate)
+    else:
+        text="Standing by..."
     return text
 
 # inner loop for recorded speech2text

@@ -1,7 +1,9 @@
-import pyaudio
-from utils import wake
-from activate import detection
 import os
+import sys
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../../..')))
+import pyaudio
+from AssistantGlasses.speech_module.stream.utils import wake
+from AssistantGlasses.speech_module.stream.activate import detection
 from dotenv import load_dotenv
 import pvporcupine
 
@@ -30,6 +32,7 @@ def stream():
                 print("On your command")
                 text=detection(streaming,audio)
                 print(text)
+                print("Standing by...")
     except:
         print("Stop recording...")
     finally:
@@ -38,3 +41,6 @@ def stream():
         streaming.close()
         pa.terminate()
         audio.delete()
+"""
+    add another wake-up word to end conversation
+"""

@@ -24,7 +24,7 @@ def recognition(pipe, audio_buffer,rate,denoise=False):
         # do not mix multiple languages
         # follow the format: "<|**|>" to set languages
         # eg. "<|en|>""<|de|>""<|fr|>""<|ja|>""<|zh|>" ISO-639-1
-        result = pipe.generate(audio_float32.tolist(),language="<|en|>")
+        result = pipe.generate(audio_float32.tolist(),language="<|zh|>")
     except Exception as e:
         print(f"Error occurred:{e}")
         import traceback
