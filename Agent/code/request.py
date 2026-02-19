@@ -3,8 +3,8 @@ import os
 import sys
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../../..')))
 from dotenv import load_dotenv
-import config
-from AssistantGlasses.Agent.utils import to_base64
+import AssistantGlasses.Agent.code.config as config
+from AssistantGlasses.Agent.code.utils import to_base64
 
 class CoreAgent():
     def __init__(self,role="default"):
