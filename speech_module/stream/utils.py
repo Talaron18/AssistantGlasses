@@ -3,7 +3,6 @@ import numpy as np
 import openvino_genai
 import os
 import noisereduce as nr
-import gpiod
 from datetime import timedelta
 # keyword check 
 def wake(handle, pcm_bytes):
@@ -53,6 +52,7 @@ def denoise(audio_int16,rate):
 """
 
 def setup_button(chip_path, pin): # find chippath with "sudo gpioinfo"
+    import gpiod
     settings = gpiod.LineSettings(
         edge_detection=gpiod.line.Edge.FALLING,
         bias=gpiod.line.Bias.PULL_UP,

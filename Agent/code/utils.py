@@ -17,7 +17,7 @@ def cv_to_base64(img):
 
 # stored image to base64
 def img_to_base64(img_path):
-    with open(img_path) as img:
+    with open(img_path,"rb") as img:
         base64_string=base64.b64encode(img.read())
         return base64_string.decode("utf-8")
 
@@ -27,3 +27,7 @@ def to_base64(img,input_type="cv"):
     elif input_type=="pil":
         processed_img=pil_to_base64(img)
     return processed_img
+
+if __name__=="__main__":
+    out=img_to_base64("C:/Users/32873/.vscode/python/AssistantGlasses/Agent/test_image.jpg")
+    print(out)
