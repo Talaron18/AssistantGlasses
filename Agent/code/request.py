@@ -121,7 +121,7 @@ class ZaiAgent():
     glm-4.6v deployed on siliconflow, using openai's python-sdk
 """
 
-class SiliconflowAgent():
+class ChatAgent():
     def __init__(self,role="default"):
         role_setting=config.SYSTEM_SETTING[role]
         # print(role_setting)
