@@ -6,6 +6,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../.
 from dotenv import load_dotenv
 import AssistantGlasses.Agent.code.config as config
 from AssistantGlasses.Agent.code.utils import to_base64,img_to_base64
+from AssistantGlasses.Agent.test.tool_test import quicktest
 
 """
     glm-4.6v-flash using zai's python-sdk
@@ -14,6 +15,24 @@ from AssistantGlasses.Agent.code.utils import to_base64,img_to_base64
 class ZaiAgent():
     def __init__(self,role="default"):
         role_setting=config.SYSTEM_SETTING[role]
+        self.quicktest=quicktest
+        self.tools=[
+            {
+                "type":"function",
+                "name":"quicktest", # enter function name
+                "description":"a quick test for external tools",
+                "parameters":{
+                    "type":"object",
+                    "properties":{
+                        "mode":{
+                            "type":"string",
+                            "description":"status e.g. ON, OFF"
+                        }
+                    },
+                    "required":["mode"]
+                }
+            }
+        ]
         self.conversation=[
             {
                 "role":"system",
@@ -28,7 +47,7 @@ class ZaiAgent():
             print("API_KEY not accessed")
         self.client=ZhipuAiClient(api_key=API_KEY,max_retries=3)
     
-    def chat_stream(self,input_flow,img_path=False):
+    def chat_stream(self,input_flow,img_path=False,tool=False):
         # loading local images
         if img_path:
             prepared=img_to_base64(input_flow)
@@ -50,19 +69,51 @@ class ZaiAgent():
             model=config.MODEL[0],
             messages=self.conversation,
             stream=True,
+            tools=self.tools if tool else None,
             thinking={
                 "type":"disabled" # set this to "disabled" if speed is too slow
             }
         )
         memory=""
-        print("Assistant: ",end="") # disable this line afterwards
-        for chunk in response:
-            content=chunk.choices[0].delta.content
-            if content:
-                print(content,end="",flush=True) # disable this line afterwards
-                memory+=content
+        tool_id=None
+        func1_name=""
+        func1_args=""
+        print("Assistant: ",end="",flush=True) # disable this line afterwards
+        for chunk in response:      
+            delta=chunk.choices[0].delta
+            if delta.content:
+                print(delta.content,end="",flush=True) # disable this line afterwards
+                memory+=delta.content
+            if delta.tool_calls:
+                if delta.tool_calls[0].id:
+                    tool_id=delta.tool_calls[0].id
+                tool_func=delta.tool_calls[0].function
+                if tool_func.name:
+                    func1_name+=tool_func.name
+                if tool_func.arguments:
+                    func1_args+=tool_func.arguments
         print() # disable this line afterwards
-        self.conversation.append({"role":"assistant","content":memory})
+        if tool_id:
+            import json
+            args=json.loads(func1_args)
+            func=getattr(self,func1_name,None)
+            if callable(func):
+                result=func(**args)
+                self.conversation.append({
+                    "role":"assistant",
+                    "tool_calls":[{
+                        "id":tool_id,
+                        "type":"function",
+                        "function":{"name":func1_name,"arguments":func1_args}
+                    }]
+                })
+                self.conversation.append({
+                    "role":"tool",
+                    "tool_call_id":tool_id,
+                    "content":str(result)
+                })
+        else:
+            self.conversation.append({"role":"assistant","content":memory})
         return self.conversation
 
 """
@@ -70,9 +121,27 @@ class ZaiAgent():
 """
 
 class SiliconflowAgent():
-    def __init__(self,role="nekomusume"):
+    def __init__(self,role="default"):
         role_setting=config.SYSTEM_SETTING[role]
-        print(role_setting)
+        # print(role_setting)
+        self.quicktest=quicktest
+        self.tools=[
+            {
+                "type":"function",
+                "name":"quicktest", # enter function name
+                "description":"a quick test for external tools",
+                "parameters":{
+                    "type":"object",
+                    "properties":{
+                        "mode":{
+                            "type":"string",
+                            "description":"status e.g. ON, OFF"
+                        }
+                    },
+                    "required":["mode"]
+                }
+            }
+        ]
         self.conversation=[
             {
                 "role":"system",
@@ -87,7 +156,7 @@ class SiliconflowAgent():
             print("API_KEY not accessed")
         self.client=OpenAI(api_key=API_KEY,base_url="https://api.siliconflow.cn/v1")
 
-    def chat_stream(self,input_flow,img_path=False):
+    def chat_stream(self,input_flow,img_path=False,tool=True):
         # loading local images
         if img_path:
             prepared=img_to_base64(input_flow)
@@ -107,17 +176,58 @@ class SiliconflowAgent():
         response=self.client.chat.completions.create(
             model=config.MODEL[3],
             messages=self.conversation,
-            stream=True
+            #tools=self.tools if tool else None,
+            stream=True,
+            extra_body={
+                "thinking_budget":2048 # change this parameter to adjust response time, token consumption and accuracy
+            }
         )
         memory=""
-        print("Assistant: ",end="") # disable this line afterwards
-        for chunk in response:
-            content=chunk.choices[0].delta.content
-            if content:
-                print(content,end="",flush=True) # disable this line afterwards
-                memory+=content
+        tool_id=None
+        func1_name=""
+        func1_args=""
+        print("Assistant: ",end="",flush=True) # disable this line afterwards
+        for chunk in response:      
+            if not chunk.choices:continue
+            delta=chunk.choices[0].delta
+            if delta.content:
+                print(delta.content,end="",flush=True) # disable this line afterwards
+                memory+=delta.content
+            if delta.tool_calls:
+                if delta.tool_calls[0].id:
+                    tool_id=delta.tool_calls[0].id
+                if delta.tool_calls[0].function:
+                    tool_func=delta.tool_calls[0].function
+                    if tool_func.name:
+                        func1_name+=tool_func.name
+                    if tool_func.arguments:
+                        func1_args+=tool_func.arguments
         print() # disable this line afterwards
-        self.conversation.append({"role":"assistant","content":memory})
+        if tool_id:
+            import json
+            try:
+                args=json.loads(func1_args)
+                func=getattr(self,func1_name,None)
+                if callable(func):
+                    result=func(**args)
+                    self.conversation.append({
+                        "role":"assistant",
+                        "content":None,
+                        "tool_calls":[{
+                            "id":tool_id,
+                            "type":"function",
+                            "function":{"name":func1_name,"arguments":func1_args}
+                        }]
+                    })
+                    self.conversation.append({
+                        "role":"tool",
+                        "tool_call_id":tool_id,
+                        "content":str(result) if result is not None else "success"
+                    })
+            except json.JSONDecodeError:
+                print("Invalid JSON for tool arguments...")
+        else:
+            self.conversation.append({"role":"assistant","content":memory})
         return self.conversation
 
 """
