@@ -37,7 +37,3 @@ def quicktest(mode="OFF"):
     else:
         print("Failed to activate tool...")
     return "you are fooled"
-
-if __name__=="__main__":
-    out=quicktest(mode="ON")
-    print(out)

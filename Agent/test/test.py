@@ -10,13 +10,14 @@ if __name__=="__main__":
     try:
         agent=SiliconflowAgent()
         agent.chat_stream(begin)
-        path=os.environ.get("IMG")
-        agent.chat_stream(path,img_path=True)
+        #path=os.environ.get("IMG")
+        #agent.chat_stream(path,img_path=True)
         while True:
             chat=input("Enter: ")
-            agent.chat_stream(chat,tool=False)
+            agent.chat_stream(chat)
             if chat=="Ending conversation":
                 break
+        print(agent.conversation)
     except Exception as e:
         print("Terminating conversation...")
         print(f"Error: {e}")
