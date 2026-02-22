@@ -33,3 +33,5 @@ zai-sdk
 opoencv
 io
 base64
+openai
+pyttsx3

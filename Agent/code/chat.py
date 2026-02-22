@@ -7,6 +7,8 @@ import os
 import sys
 import json
 import traceback
+import threading
+import queue
 from dotenv import load_dotenv
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../../..')))
 import AssistantGlasses.Agent.code.config as config
@@ -14,6 +16,7 @@ from AssistantGlasses.Agent.code.utils import to_base64, img_to_base64
 from AssistantGlasses.Agent.test.tool_test import quicktest
 from zai import ZhipuAiClient
 from openai import OpenAI
+from AssistantGlasses.voice_module.read import TTS
 
 """
     base class handling both zai and siliconflow models
@@ -25,7 +28,22 @@ class BaseAgent:
         self.conversation = [
             {"role": "system", "content": self.role_setting}
         ]
+        self.tools = [{
+            "type": "function",
+            "function": {
+                "name": "quicktest",
+                "description": "a quick test for external tools",
+                "parameters": {
+                    "type": "object",
+                    "properties": {"mode": {"type": "string", "enum": ["ON", "OFF"], "description": "operation mode of the tool"}},
+                    "required": ["mode"]
+                }
+            }
+        }]
         load_dotenv()
+        self.tts_queue=queue.Queue()
+        self.tts_thread=threading.Thread(target=self.tts_go,daemon=True)
+        self.tts_thread.start()
 
     # remove wake words from text input
     def strip_wake_words(self, text: str) -> str:
@@ -35,6 +53,20 @@ class BaseAgent:
             if lower_text.startswith(wake_word):
                 return text[len(wake_word):].lstrip(" ,.!?:")
         return text
+    
+    def tts_go(self):
+        while True:
+            text=self.tts_queue.get()
+            if text is None:
+                break
+            try:
+                tts=TTS()
+                tts.speak(text)
+                del(tts)
+            except Exception as e:
+                print(f"TTS error: {e}")
+            finally:
+                self.tts_queue.task_done()
 
     def prepare_input(self, input_flow, img_path=False):
         # handle image path for image uploads
@@ -61,7 +93,8 @@ class BaseAgent:
         tool_id = None
         func_name = ""
         func_args = ""
-        
+        sentence_buffer="" 
+        punctuation=['.','!','?','\n','。','！','？','……']
         print("Assistant: ", end="", flush=True)
         for chunk in response:
             if not chunk.choices:
@@ -69,10 +102,15 @@ class BaseAgent:
             delta = chunk.choices[0].delta
             
             # Stream text content
-            if getattr(delta, "content", None):
-                print(delta.content, end="", flush=True)
-                memory += delta.content
-                
+            content=getattr(delta,"content",None) or getattr(delta,"reasoning_content",None)
+            if content:
+                print(content,end="",flush=True)
+                memory+=content
+                sentence_buffer+=content
+                if any(punct in sentence_buffer for punct in punctuation):
+                    self.tts_queue.put(sentence_buffer.strip())
+                    sentence_buffer=""
+
             # Stream tool calls
             if getattr(delta, "tool_calls", None):
                 if not tool_id:
@@ -87,10 +125,10 @@ class BaseAgent:
                     if getattr(tool_func, "name", None):
                         func_name += tool_func.name
                     if getattr(tool_func, "arguments", None):
-                        func_args += tool_func.arguments
-                        
+                        func_args += tool_func.arguments             
         print() # End of stream line break
-
+        if sentence_buffer.strip():
+            self.tts_queue.put(sentence_buffer.strip())
         # Execute tool if one was called
         if tool_id:
             try:
@@ -116,7 +154,6 @@ class BaseAgent:
                 print("Invalid JSON for tool arguments...")
         else:
             self.conversation.append({"role": "assistant", "content": memory})
-            
         return self.conversation
 
 
@@ -124,16 +161,6 @@ class ZaiAgent(BaseAgent):
     """glm-4.6v-flash using zai's python-sdk"""
     def __init__(self, role="default"):
         super().__init__(role)
-        self.tools = [{
-            "type": "function",
-            "name": "quicktest",
-            "description": "a quick test for external tools",
-            "parameters": {
-                "type": "object",
-                "properties": {"mode": {"type": "string", "description": "status e.g. ON, OFF"}},
-                "required": ["mode"]
-            }
-        }]
         api_key = os.environ.get("ZAI_API_KEY")
         print(f"API_KEY status (ZAI): {bool(api_key)}")
         self.client = ZhipuAiClient(api_key=api_key, max_retries=3)
@@ -155,23 +182,11 @@ class SiliconflowAgent(BaseAgent):
     """glm-4.6v deployed on siliconflow, using openai's python-sdk"""
     def __init__(self, role="default"):
         super().__init__(role)
-        self.tools = [{
-            "type": "function",
-            "function": {
-                "name": "quicktest",
-                "description": "a quick test for external tools",
-                "parameters": {
-                    "type": "object",
-                    "properties": {"mode": {"type": "string", "enum": ["ON", "OFF"], "description": "operation mode of the tool"}},
-                    "required": ["mode"]
-                }
-            }
-        }]
         api_key = os.environ.get("SILICON_FLOW")
         print(f"API_KEY status (SiliconFlow): {bool(api_key)}")
         self.client = OpenAI(api_key=api_key, base_url="https://api.siliconflow.cn/v1")
 
-    def chat_stream(self, input_flow, img_path=False, tool=False):
+    def chat_stream(self, input_flow, img_path=False, tool=True):
         self.prepare_input(input_flow, img_path)
         
         try:

@@ -2,8 +2,8 @@ from dotenv import load_dotenv
 import os
 import sys
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../../..')))
-from AssistantGlasses.Agent.code.request import SiliconflowAgent
-
+#from AssistantGlasses.Agent.code.request import SiliconflowAgent
+from AssistantGlasses.Agent.code.chat import SiliconflowAgent
 if __name__=="__main__":
     begin=input("Start conversation: ")
     load_dotenv()
@@ -17,7 +17,7 @@ if __name__=="__main__":
             agent.chat_stream(chat)
             if chat=="Ending conversation":
                 break
-        print(agent.conversation)
+        #print(agent.conversation)
     except Exception as e:
         print("Terminating conversation...")
         print(f"Error: {e}")
