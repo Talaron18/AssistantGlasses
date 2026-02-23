@@ -17,6 +17,7 @@ from AssistantGlasses.Agent.test.tool_test import quicktest
 from zai import ZhipuAiClient
 from openai import OpenAI
 from AssistantGlasses.voice_module.read import TTS
+from AssistantGlasses.voice_module.edge_tts import play
 
 """
     base class handling both zai and siliconflow models
@@ -42,8 +43,9 @@ class BaseAgent:
         }]
         load_dotenv()
         self.tts_queue=queue.Queue()
-        self.tts_thread=threading.Thread(target=self.tts_go,daemon=True)
+        self.tts_thread=threading.Thread(target=self.edge_go,daemon=True) # switch to tts_go if edge tts collapses
         self.tts_thread.start()
+        self.edge_play=play
 
     # remove wake words from text input
     def strip_wake_words(self, text: str) -> str:
@@ -67,7 +69,23 @@ class BaseAgent:
                 print(f"TTS error: {e}")
             finally:
                 self.tts_queue.task_done()
-
+    def edge_go(self):
+        import pygame
+        import asyncio
+        pygame.mixer.init()
+        voice="zh-CN-XiaoxiaoNeural"
+        
+        while True:
+            text=self.tts_queue.get()
+            if text is None:
+                break
+            try:
+                asyncio.run(self.edge_play(text,voice))
+            except Exception as e:
+                print(f"Edge TTS error: {e}")
+            finally:
+                self.tts_queue.task_done()
+                
     def prepare_input(self, input_flow, img_path=False):
         # handle image path for image uploads
         if img_path:
