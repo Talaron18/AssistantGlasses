@@ -17,7 +17,7 @@ from AssistantGlasses.Agent.test.tool_test import quicktest
 from zai import ZhipuAiClient
 from openai import OpenAI
 from AssistantGlasses.voice_module.read import TTS
-from AssistantGlasses.voice_module.edge_tts import play
+from AssistantGlasses.voice_module.edge_tts import stream_audio
 
 """
     base class handling both zai and siliconflow models
@@ -43,9 +43,9 @@ class BaseAgent:
         }]
         load_dotenv()
         self.tts_queue=queue.Queue()
-        self.tts_thread=threading.Thread(target=self.tts_go,daemon=True)
+        self.tts_thread=threading.Thread(target=self.edge_go,daemon=True)
         self.tts_thread.start()
-        self.edge_play=play
+        self.edge_play=stream_audio
 
     # remove wake words from text input
     def strip_wake_words(self, text: str) -> str:
@@ -73,17 +73,24 @@ class BaseAgent:
 
     def edge_go(self):
         import asyncio
-        import pygame
-        pygame.mixer.init()
-        voice="zh-CN-XiaoxiaoNeural"
+        import subprocess
         while True:
-            text=self.tts_queue.get()
-            if text is None:
+            text = self.tts_queue.get()
+            if text is None: 
                 break
             try:
-                asyncio.run(self.edge_play(text,voice))
+                process = subprocess.Popen(
+                    ["ffplay", "-autoexit", "-nodisp", "-i", "-"],
+                    stdin=subprocess.PIPE,
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.DEVNULL 
+                )
+                asyncio.run(self.edge_play(text, process))
+                
+            except FileNotFoundError:
+                print("Error: FFmpeg is not installed or not in system PATH.")
             except Exception as e:
-                print(f"TTS error: {e}")
+                print(f"Streaming Error: {e}")
             finally:
                 self.tts_queue.task_done()
 
@@ -126,9 +133,10 @@ class BaseAgent:
                 print(content,end="",flush=True)
                 memory+=content
                 sentence_buffer+=content
-                if any(punct in sentence_buffer for punct in punctuation):
+            if len(sentence_buffer.split()) >= 6 or any(p in sentence_buffer for p in punctuation):
+                if sentence_buffer.strip():
                     self.tts_queue.put(sentence_buffer.strip())
-                    sentence_buffer=""
+                    sentence_buffer = ""
 
             # Stream tool calls
             if getattr(delta, "tool_calls", None):
