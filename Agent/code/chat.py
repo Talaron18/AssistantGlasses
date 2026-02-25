@@ -122,21 +122,23 @@ class BaseAgent:
         sentence_buffer="" 
         punctuation=['.','!','?','\n','。','！','？','……']
         print("Assistant: ", end="", flush=True)
+        is_first_chunk=True
         for chunk in response:
             if not chunk.choices:
                 continue
             delta = chunk.choices[0].delta
-            
+            word_count=len(sentence_buffer.split())
             # Stream text content
             content=getattr(delta,"content",None) or getattr(delta,"reasoning_content",None)
             if content:
                 print(content,end="",flush=True)
                 memory+=content
                 sentence_buffer+=content
-            if len(sentence_buffer.split()) >= 6 or any(p in sentence_buffer for p in punctuation):
+            if (is_first_chunk and word_count>=2) or word_count >= 6 or any(p in sentence_buffer for p in punctuation):
                 if sentence_buffer.strip():
                     self.tts_queue.put(sentence_buffer.strip())
                     sentence_buffer = ""
+                    is_first_chunk=False
 
             # Stream tool calls
             if getattr(delta, "tool_calls", None):
