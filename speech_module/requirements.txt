@@ -35,3 +35,6 @@ io
 base64
 openai
 pyttsx3
+edge-tts
+queue
+threading
