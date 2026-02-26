@@ -1,0 +1,14 @@
+[2026-02-25 21:05:02] [INFO] [TestModule] - 这是一条 INFO 信息：例如 '导航模块初始化成功'。
+[2026-02-25 21:05:02] [WARNING] [TestModule] - 这是一条 WARNING 信息：例如 '卫星数量降至 3 颗，信号弱'。
+[2026-02-25 21:05:02] [ERROR] [TestModule] - 这是一条 ERROR 信息：例如 '串口意外断开！'。
+[2026-02-25 21:05:02] [CRITICAL] [TestModule] - 这是一条 CRITICAL 信息：例如 '视觉模块宕机，立刻停止导航！'。
+[2026-02-25 21:16:43] [INFO] [__main__] - 系统配置文件加载成功
+[2026-02-25 21:24:29] [INFO] [config.config_loader] - 系统配置文件加载成功
+[2026-02-25 21:24:29] [ERROR] [__main__] - 无法打开串口 /dev/ttyUSB0
+[2026-02-25 21:33:20] [ERROR] [__main__] - 读取 Mock 数据失败: name 'mock_file_name' is not defined
+[2026-02-25 21:33:21] [INFO] [__main__] - [Mock模式] 虚拟串口已关闭
+[2026-02-25 21:37:41] [INFO] [__main__] - [Mock模式] 成功加载回放数据: nmea_sample.txt，共 11 行
+[2026-02-25 21:37:42] [INFO] [__main__] - [Mock模式] 虚拟串口已关闭
+[2026-02-25 21:52:40] [INFO] [sensors.gnss.mock_reader] - [Mock模式] 成功加载回放数据: nmea_sample.txt，共 11 行
+[2026-02-25 21:52:41] [WARNING] [sensors.gnss.mock_reader] -  [Mock模式] 文件已读完，重新循环播放数据...
+[2026-02-25 21:52:42] [INFO] [sensors.gnss.mock_reader] - [Mock模式] 虚拟串口已关闭

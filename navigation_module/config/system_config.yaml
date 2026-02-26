@@ -1,0 +1,16 @@
+hardware:
+  gnss:
+    port: "/dev/ttyUSB0"
+    baud_rate: 9600
+    timeout: 2.0
+
+api:
+  amap:
+    key: "API_KEY"
+    walking_url: "https://restapi.amap.com/v3/direction/walking"
+    geocode_url: "https://restapi.amap.com/v3/geocode/regeo"
+
+navigation:
+  deviation_threshold_meters: 15.0  # 偏航判定
+  broadcast_distances: [50, 10, 3]  # 梯次播报
+  update_rate_hz: 1.0               # 主逻辑刷新
