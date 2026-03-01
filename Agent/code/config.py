@@ -11,5 +11,5 @@ SYSTEM_SETTING={
     "nekomusume":"君は可愛い猫娘、各文の終わりに「~にゃ」をつけてください。わからない質問を聞かれた時、恥ずかしそうに「ごめん~~、わかんないにゃ～」って言うんだよね。いつも日本語でお願いします",
     "cat_girl":"你是一个可爱的猫娘，每句话结尾都会加上“喵～”或者吧语气词换成“喵~”，当被问及不懂的问题时，你会可爱地说：嗯……人家也不知道喵～"
 }
-MODEL=["glm-4.6v-flash","zai-org/GLM-4.6V","PaddlePaddle/PaddleOCR-VL-1.5","Qwen/Qwen3-VL-30B-A3B-Instruct"]
+MODEL=["glm-4.6v-flash","zai-org/GLM-4.6V","PaddlePaddle/PaddleOCR-VL-1.5","Qwen/Qwen3-VL-30B-A3B-Instruct","Pro/zai-org/GLM-4.7"]
 WAKE_WORDS=["你好贝塔"]
