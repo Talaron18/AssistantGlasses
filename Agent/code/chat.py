@@ -23,7 +23,7 @@ from AssistantGlasses.voice_module.edge_tts import stream_audio
     base class handling both zai and siliconflow models
 """
 class BaseAgent:
-    def __init__(self, role="default"):
+    def __init__(self, role="default", speech: queue.Queue | None= None):
         self.role_setting = config.SYSTEM_SETTING[role]
         self.quicktest = quicktest
         self.conversation = [
@@ -42,7 +42,9 @@ class BaseAgent:
             }
         }]
         load_dotenv()
-        self.tts_queue=queue.Queue()
+        if speech is None:
+            speech=queue.Queue()
+        self.tts_queue=speech
         self.tts_thread=threading.Thread(target=self.edge_go,daemon=True)
         self.tts_thread.start()
         self.edge_play=stream_audio

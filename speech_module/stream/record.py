@@ -5,9 +5,10 @@ import pyaudio
 from AssistantGlasses.speech_module.stream.utils import wake
 from AssistantGlasses.speech_module.stream.activate import detection
 from dotenv import load_dotenv
+import queue
 import pvporcupine
 
-def stream():
+def stream(listen: queue.Queue | None=None):
     load_dotenv()
     audio=pvporcupine.create(
         access_key=os.environ.get('PORCUPINE_KEY'),
@@ -23,7 +24,9 @@ def stream():
         input=True,
         frames_per_buffer=audio.frame_length
     )
-    if streaming !=None:
+    if listen is None:
+        listen=queue.Queue()
+    if streaming is not None:
         print("System initiated...")
     try:
         while True:
@@ -31,9 +34,9 @@ def stream():
             if wake(audio,audio_data):
                 print("On your command")
                 text=detection(streaming,audio)
-                print(text)
-                print("Standing by...")
-    except:
+                listen.put(text.strip()) # adding input text to a queue, ready for update
+    except Exception as e:
+        print(f"Receiving interuption: {e}")
         print("Stop recording...")
     finally:
         # clear cache occupancy
@@ -43,4 +46,5 @@ def stream():
         audio.delete()
 """
     add another wake-up word to end conversation
+    设置2个关键词：发送（只发送字符串，不关闭语音识别）、结束（关闭语音识别）
 """

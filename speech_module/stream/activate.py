@@ -7,7 +7,7 @@ import numpy as np
 from pydub import AudioSegment
 import sys
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../../..')))
-from AssistantGlasses.speech_module.stream.utils import voice_to_text,manual_close,setup_button
+from AssistantGlasses.speech_module.stream.utils import voice_to_text,keyword_check
 from dotenv import load_dotenv
 
 def detection(streaming,audio):
@@ -103,12 +103,19 @@ def loop3(cobra,streaming,audio,length,rate,voice_termination=False):
         if time.time()-last_detection_time>float(SILENCE_THRESHOLD):
             break
         if voice_termination:
-            button_req=setup_button("***",18)
-            if manual_close(audio, pcm_bytes, mode="voice", button_request=button_req):
+            if keyword_check=="to_agent":
                 break
     audio_buffer=np.concatenate(audio_buffer)
     if not blank:
         text=voice_to_text(audio_buffer,rate)
+        text=text.slice[:,-2] # slice the wake up words 
+        """
+            the keyword detection might be triggered while the recognition output is wrong.
+            set the argument "-n" to match the length of keyword to slice it out of the text
+        """
     else:
         text="Standing by..."
     return text
+"""
+如果不是“结束”就只存到input的queue
+"""
