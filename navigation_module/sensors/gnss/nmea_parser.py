@@ -28,7 +28,7 @@ class NMEAParser:
             # 使用 pynmea2 解析
             msg = pynmea2.parse(raw_line)
 
-            # GPRMC (经纬度、速度、数据有效性)
+            # GPRMC (经纬度、速度、航向、数据有效性)
             if isinstance(msg, pynmea2.types.talker.RMC):
                 # 'A' 有效，'V' 无效
                 is_valid = (msg.status == 'A')
@@ -38,10 +38,11 @@ class NMEAParser:
                     "is_valid": is_valid,
                     "latitude": msg.latitude,    
                     "longitude": msg.longitude,
-                    "speed_kmh": float(msg.spd_over_grnd) * 1.852 if msg.spd_over_grnd else 0.0
+                    "speed_kmh": float(msg.spd_over_grnd) * 1.852 if msg.spd_over_grnd else 0.0,
+                    "true_course": float(msg.true_course) if msg.true_course else 0.0
                 }
 
-            # GPGGA (卫星数量、HDOP) 
+            # GPGGA (卫星数量、HDOP、海拔) 
             elif isinstance(msg, pynmea2.types.talker.GGA):
                 return {
                     "type": "GGA",

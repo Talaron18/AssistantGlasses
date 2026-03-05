@@ -6,7 +6,8 @@ hardware:
 
 api:
   amap:
-    key: "API_KEY"
+    # 运行前于终端执行: export AMAP_API_KEY="真实密钥"
+    key: "AMAP_KEY"
     walking_url: "https://restapi.amap.com/v3/direction/walking"
     geocode_url: "https://restapi.amap.com/v3/geocode/regeo"
 
