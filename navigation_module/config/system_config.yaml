@@ -1,7 +1,7 @@
 hardware:
   gnss:
-    port: "/dev/ttyUSB0"
-    baud_rate: 9600
+    port: "COM9"
+    baud_rate: 38400
     timeout: 2.0
 
 api:

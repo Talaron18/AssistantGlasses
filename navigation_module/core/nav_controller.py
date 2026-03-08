@@ -8,10 +8,10 @@ from sensors.gnss.mock_reader import MockGNSSReader
 from sensors.gnss.nmea_parser import NMEAParser
 from algo.fusion.linear_kalman import LinearKalmanFilter
 from algo.geo.coord_transform import CoordTransformer
-from algo.geo.haversine import haversine_distance     # 球面测距算法
-from services.amap_provider import AMapProvider       # 高德云端大脑
-from config.config_loader import load_config          # 播报阈值
-
+from algo.geo.haversine import haversine_distance
+from services.amap_provider import AMapProvider
+from config.config_loader import load_config
+from sensors.gnss.serial_reader import GNSSSerialReader
 from utils.logger import get_logger
 
 logger = get_logger(__name__)
@@ -24,7 +24,8 @@ class NavController:
         logger.info("正在初始化核心控制器...")
         
         # 底层感知与算法
-        self.reader = MockGNSSReader(mock_file_name="nmea_sample.txt")
+        #self.reader = MockGNSSReader(mock_file_name="nmea_sample.txt")
+        self.reader = GNSSSerialReader() # 连接物理串口读取器
         self.parser = NMEAParser()
         self.kalman = LinearKalmanFilter()
         self.transformer = CoordTransformer()
@@ -43,7 +44,7 @@ class NavController:
         self.current_route = None
         
         # 模拟从语音模块接收到的自然语言指令
-        self.target_name = "南京南站" 
+        self.target_name = "北京理工大学良乡校区徐特立图书馆" 
         self.target_lon = None  # 初始坐标为空，等待云端解析
         self.target_lat = None
 
@@ -84,7 +85,7 @@ class NavController:
                 # 将语音指令翻译成经纬度
                 if not self.target_lon or not self.target_lat:
                     logger.info(f"正在将语音指令 '{self.target_name}' 转换为经纬度坐标...")
-                    self.target_lon, self.target_lat = self.map_api.get_coordinate_by_name(self.target_name, city="南京")
+                    self.target_lon, self.target_lat = self.map_api.get_coordinate_by_name(self.target_name)
                     
                     if not self.target_lon:
                         logger.error(f"找不到 '{self.target_name}' 的位置，请盲人重新语音输入！")
@@ -113,7 +114,6 @@ class NavController:
                     # 允许有 0.5 米的误差范围，防止刚好错过
                     if abs(distance_to_target - threshold) < 0.5:
                         logger.warning(f"[语音模块播报]: 距离终点还有 {threshold} 米！")
-                        # 实际工程中，这里会通过 ipc/voice_handler.py 发送给喇叭
                         
                 if distance_to_target <= 1.5:
                     logger.warning("[语音模块播报]: 您已到达目的地附近，导航结束。")
