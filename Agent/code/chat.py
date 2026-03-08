@@ -211,7 +211,7 @@ class ZaiAgent(BaseAgent):
 
 class SiliconflowAgent(BaseAgent):
     """glm-4.6v deployed on siliconflow, using openai's python-sdk"""
-    def __init__(self, role="default"):
+    def __init__(self, role="default",speech: queue.Queue | None= None):
         super().__init__(role)
         api_key = os.environ.get("SILICON_FLOW")
         print(f"API_KEY status (SiliconFlow): {bool(api_key)}")

@@ -31,7 +31,7 @@ def recognition(pipe, audio_buffer,rate,denoise=False):
         traceback.print_exc()
     return result.texts[0]
 
-def voice_to_text(frames,rate):
+def voice_to_text(frames,rate,q):
     whisper=os.environ.get("WHISPER_DIR")
     print("Model path found..." if whisper else "Model not found...")
     pipe=openvino_genai.WhisperPipeline(whisper,"GPU")
@@ -39,9 +39,10 @@ def voice_to_text(frames,rate):
         # turn on denoise function here if needed
         print("Whisper initiated...")
         text=recognition(pipe,frames,rate)
+        print(text)
     else:
         print("Pipe Invalid...")
-    return text
+    q.put(text)
 
 def denoise(audio_int16,rate):
     processed_audio=nr.reduce_noise(y=audio_int16,sr=rate,prop_decrease=0.6)
@@ -70,13 +71,3 @@ def manual_close(handle, pcm_bytes, mode="voice", button_request=None):
             button_request.read_edge_events() 
             return True
     return False
-
-def keyword_check(handle,pcm_bytes):
-    pcm_ints = struct.unpack_from("h" * handle.frame_length, pcm_bytes)
-    if pcm_ints == 1:
-        keyword = "to_agent"
-    elif pcm_ints == 2:
-        keyword = "stop_listening"
-    elif pcm_ints == 3:
-        keyword = "navigation"
-    return keyword

@@ -6,19 +6,21 @@ import struct
 import numpy as np
 from pydub import AudioSegment
 import sys
+import queue
+import threading 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../../..')))
 from AssistantGlasses.speech_module.stream.utils import voice_to_text,keyword_check
 from dotenv import load_dotenv
 
-def detection(streaming,audio):
+def detection(ak,st,ss,streaming,audio,keys,q:queue.Queue | None=None):
     load_dotenv()
-    cobra=pvcobra.create(access_key=os.environ.get('PORCUPINE_KEY'),device="best") 
+    cobra=pvcobra.create(access_key=ak,device="best") 
     print("Agent in command...")
     if isinstance(audio,pvporcupine.Porcupine):
         print("Starting realtime recognition...")
         rate=audio.sample_rate
         length=audio.frame_length
-        text=loop1(cobra,streaming,length,rate) # add audio input if using loop3
+        text=loop3(st,ss,cobra,audio,streaming,length,rate,q,keys) # add audio input if using loop3
     elif isinstance(audio,AudioSegment):
         print("Starting audio recognition...")
         rate=audio.frame_rate
@@ -84,38 +86,46 @@ def loop2(cobra,streaming,length,audio,rate):
     BE AWARE!!! This loop may be filled with bugs as it has NOT BEEN TESTED
 """
 
-def loop3(cobra,streaming,audio,length,rate,voice_termination=False):
+def loop3(st,ss,cobra,audio,streaming,length,rate,q,keys):
+    audio_data=streaming.read(audio.frame_length,exception_on_overflow=False)
     last_detection_time=time.time()
     load_dotenv()
-    SILENCE_THRESHOLD=os.environ.get('SILENCE_THRESHOLD')
-    SPEECH_SENSITIVITY=os.environ.get('SPEECH_SENSITIVITY')
     audio_buffer=[]
     blank=True
+    flush=""
+    key_thread=threading.Thread(target=keyword_check, args=(audio, audio_data))
+    key_thread.start()
+    stt_thread=None
     while True:
+        try:
+            key_val=keys.get_nowait()
+            if key_val in ["to_agent", "navigation"]:
+                break
+        except:
+            pass
         #print(streaming.is_active())
         pcm_bytes=streaming.read(length)
         pcm_ints=struct.unpack_from("h"*length,pcm_bytes)
         audio_buffer.append(np.frombuffer(pcm_bytes,dtype=np.int16))
         speech_detection=cobra.process(pcm_ints)
-        if speech_detection>float(SPEECH_SENSITIVITY):
+        if speech_detection>float(ss):
             blank=False
             last_detection_time=time.time()
-        if time.time()-last_detection_time>float(SILENCE_THRESHOLD):
-            break
-        if voice_termination:
-            if keyword_check=="to_agent":
-                break
-    audio_buffer=np.concatenate(audio_buffer)
-    if not blank:
-        text=voice_to_text(audio_buffer,rate)
-        text=text.slice[:,-2] # slice the wake up words 
-        """
-            the keyword detection might be triggered while the recognition output is wrong.
-            set the argument "-n" to match the length of keyword to slice it out of the text
-        """
-    else:
-        text="Standing by..."
-    return text
+        if time.time()-last_detection_time>float(st):
+            if not blank:
+                audio_buffer=np.concatenate(audio_buffer)
+                if stt_thread is None or not stt_thread.is_alive():
+                    stt_thread=threading.Thread(target=voice_to_text,args=(audio_buffer,rate,q))
+                    stt_thread.start()
+                audio_buffer=[]
+                blank=True
+        try:
+            stt_result=q.get_nowait()
+            if stt_result:
+                flush+=stt_result
+        except:
+            pass
+    return flush
 """
 如果不是“结束”就只存到input的queue
 """
