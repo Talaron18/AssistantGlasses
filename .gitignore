@@ -1,0 +1,16 @@
+# Python 字节码缓存 (就是让你烦心的那些)
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# VS Code 配置文件 (每个人习惯不同，不建议上传)
+.vscode/
+
+# 编译产生的日志或临时文件
+logs/
+*.log
+
+# 虚拟环境 (如果你以后用了 venv)
+venv/
+.env
