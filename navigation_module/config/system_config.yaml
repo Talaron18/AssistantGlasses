@@ -10,6 +10,7 @@ api:
     key: "AMAP_KEY"
     walking_url: "https://restapi.amap.com/v3/direction/walking"
     geocode_url: "https://restapi.amap.com/v3/geocode/regeo"
+    geo_url: "https://restapi.amap.com/v3/geocode/geo"
 
 navigation:
   deviation_threshold_meters: 15.0  # 偏航判定
