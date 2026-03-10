@@ -75,11 +75,11 @@ def stream(listen_q,action_q):
                     if not blank and len(audio_buffer)>0:
                         process_stt(audio_buffer,audio.sample_rate,stt_queue)
                         audio_buffer=[]
-                        continue
                     if keywords==3:
                         action_q.put("agent")
                     elif keywords==4:
                         action_q.put("navi_zoom")
+                    continue
 
             if activate_listening:
                 audio_buffer.append(np.frombuffer(audio_bytes,dtype=np.int16))

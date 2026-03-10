@@ -6,6 +6,9 @@ from AssistantGlasses.Agent.code.chat import SiliconflowAgent
 from AssistantGlasses.speech_module.stream.record import stream
 import queue
 
+"""
+    yet to be tested
+"""
 class Control():
     def __init__(self):
         self.speech=queue.Queue()
@@ -27,8 +30,15 @@ class Control():
                 if current_action=="agent":
                     print("Sending request...")
                     self.speech.put("请稍等，正在连接服务器。")
-                    user_input=self.listen.get()
-                    if user_input:
+                    user_input=""
+                    try:
+                        user_input+=self.listen.get(timeout=5.0)
+                    except queue.Empty:
+                        print("STT timed out or returned no text...")
+                        continue
+                    while not self.listen.empty():
+                        user_input+=" "+self.listen.get()
+                    if user_input.strip():
                         print(user_input)
                         self.agent.chat_stream(user_input,tool=False)
                 elif current_action=="photo":
