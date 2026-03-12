@@ -1,6 +1,7 @@
 import os
 import sys
 import threading
+import time
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from AssistantGlasses.Agent.code.chat import SiliconflowAgent
 from AssistantGlasses.speech_module.stream.record import stream
@@ -26,21 +27,30 @@ class Control():
         print("Ready for inputs...")
         while True:
             try:
-                current_action=self.action.get()
+                try:
+                    current_action=self.action.get(timeout=0.1)
+                except queue.Empty:
+                    continue
                 if current_action=="agent":
                     print("Sending request...")
                     self.speech.put("请稍等，正在连接服务器。")
                     user_input=""
+                    stt_time=time.time()
                     try:
-                        user_input+=self.listen.get(timeout=5.0)
+                        user_input+=self.listen.get()
                     except queue.Empty:
                         print("STT timed out or returned no text...")
                         continue
                     while not self.listen.empty():
                         user_input+=" "+self.listen.get()
+                    stt_end=time.time()
+                    print(f"-->stt took {stt_end-stt_time:.2f} seconds")
                     if user_input.strip():
                         print(user_input)
+                        agent_start=time.time()
                         self.agent.chat_stream(user_input,tool=False)
+                        print(f"--> Agent response time: {time.time()-agent_start:.2f} seconds")
+                        
                 elif current_action=="photo":
                     # put the camera-control function here
                     print("Taking picuture...")
@@ -52,8 +62,7 @@ class Control():
                     print("Navigation palsed...")
                 elif current_action=="on":
                     print("On your command...")
-            except queue.Empty:
-                print("...\n")
+            
             except KeyboardInterrupt:
                 print("Shutting down conversation...")
                 break
