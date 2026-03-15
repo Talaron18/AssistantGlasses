@@ -4,6 +4,7 @@
 """
 
 import os
+import re
 import sys
 import json
 import traceback
@@ -12,6 +13,7 @@ import queue
 from dotenv import load_dotenv
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../../..')))
 import AssistantGlasses.Agent.code.config as config
+
 from AssistantGlasses.Agent.code.utils import to_base64, img_to_base64
 from AssistantGlasses.Agent.test.tool_test import quicktest
 from zai import ZhipuAiClient
@@ -23,7 +25,7 @@ from AssistantGlasses.voice_module.edge_tts import stream_audio
     base class handling both zai and siliconflow models
 """
 class BaseAgent:
-    def __init__(self, role="default", speech: queue.Queue | None= None):
+    def __init__(self, destination:queue.Queue, role="default", speech: queue.Queue | None= None):
         self.role_setting = config.SYSTEM_SETTING[role]
         self.quicktest = quicktest
         self.conversation = [
@@ -45,6 +47,7 @@ class BaseAgent:
         if speech is None:
             speech=queue.Queue()
         self.tts_queue=speech
+        self.destination=destination
         self.tts_thread=threading.Thread(target=self.edge_go,daemon=True)
         self.tts_thread.start()
         self.edge_play=stream_audio
@@ -123,6 +126,7 @@ class BaseAgent:
         func_args = ""
         sentence_buffer="" 
         punctuation=['.','!','?','\n','。','！','？','……']
+        pattern=r"\[&location/(.*?)&\]"
         print("Assistant: ", end="", flush=True)
         is_first_chunk=True
         for chunk in response:
@@ -137,10 +141,17 @@ class BaseAgent:
                 memory+=content
                 sentence_buffer+=content
             if (is_first_chunk and word_count>=2) or word_count >= 6 or any(p in sentence_buffer for p in punctuation):
-                if sentence_buffer.strip():
-                    self.tts_queue.put(sentence_buffer.strip())
-                    sentence_buffer = ""
-                    is_first_chunk=False
+                if "&]" in sentence_buffer:
+                    match=re.search(pattern,sentence_buffer)
+                    self.destination.put(match.group(1).strip())
+                    self.tts_queue.put(f'请问您是要导航到{match.group(1).strip()}吗？')
+                    sentence_buffer = re.sub(r"\[&location/.*?&\]", "", sentence_buffer)
+                else:
+                    if sentence_buffer.strip():
+                        self.tts_queue.put(sentence_buffer.strip())
+                        sentence_buffer = ""
+                        is_first_chunk=False
+                
 
             # Stream tool calls
             if getattr(delta, "tool_calls", None):
@@ -211,8 +222,8 @@ class ZaiAgent(BaseAgent):
 
 class SiliconflowAgent(BaseAgent):
     """glm-4.6v deployed on siliconflow, using openai's python-sdk"""
-    def __init__(self, role="default",speech: queue.Queue | None= None):
-        super().__init__(role)
+    def __init__(self, destination:queue.Queue, role="default", speech: queue.Queue | None= None):
+        super().__init__(role=role,destination=destination,speech=speech)
         api_key = os.environ.get("SILICON_FLOW")
         print(f"API_KEY status (SiliconFlow): {bool(api_key)}")
         self.client = OpenAI(api_key=api_key, base_url="https://api.siliconflow.cn/v1")

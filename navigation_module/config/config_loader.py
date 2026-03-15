@@ -1,7 +1,7 @@
 import yaml
 import os
 import sys
-
+from dotenv import load_dotenv
 # 将工程根目录加入系统路径
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from utils.logger import get_logger
@@ -14,6 +14,7 @@ def load_config() -> dict:
     :return: 包含所有配置项的字典
     """
     # 动态获取 yaml 文件的绝对路径
+    load_dotenv()
     config_path = os.path.join(os.path.dirname(__file__), 'system_config.yaml')
     
     if not os.path.exists(config_path):
@@ -25,7 +26,7 @@ def load_config() -> dict:
             config_dict = yaml.safe_load(f)
             
             # 安全覆盖机制：优先从操作系统环境变量读取 API Key
-            env_amap_key = os.getenv('AMAP_API_KEY')
+            env_amap_key = os.environ.get('AMAP_API_KEY')
             if env_amap_key:
                 config_dict['api']['amap']['key'] = env_amap_key
                 logger.info("已安全从环境变量加载高德地图 API Key")

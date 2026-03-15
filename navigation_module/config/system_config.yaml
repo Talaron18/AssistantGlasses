@@ -1,6 +1,6 @@
 hardware:
   gnss:
-    port: "COM9"
+    port: "COM4"
     baud_rate: 38400
     timeout: 2.0
 
@@ -14,5 +14,5 @@ api:
 
 navigation:
   deviation_threshold_meters: 15.0  # 偏航判定
-  broadcast_distances: [50, 10, 3]  # 梯次播报
+  broadcast_distances: [2300,2200,2100,2050, 10, 3]  # 梯次播报
   update_rate_hz: 1.0               # 主逻辑刷新

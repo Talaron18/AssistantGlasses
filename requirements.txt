@@ -38,3 +38,6 @@ pyttsx3
 edge-tts
 queue
 threading
+re
+serial
+pynmea2

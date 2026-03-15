@@ -1,6 +1,6 @@
 import sys
 import os
-
+import queue
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from core.nav_controller import NavController
@@ -8,10 +8,10 @@ from utils.logger import get_logger
 
 logger = get_logger("Main")
 
-def main():
+def main(tts_queue:queue.Queue,nav_queue:queue.Queue):
     logger.info("导航模块启动中...")
 
-    controller = NavController()
+    controller = NavController(tts_queue=tts_queue,nav_queue=nav_queue)
 
     try:
         controller.run_main_loop()

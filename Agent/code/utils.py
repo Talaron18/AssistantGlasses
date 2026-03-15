@@ -29,5 +29,5 @@ def to_base64(img,input_type="cv"):
     return processed_img
 
 if __name__=="__main__":
-    out=img_to_base64("C:/Users/32873/.vscode/python/AssistantGlasses/Agent/test_image.jpg")
+    out=img_to_base64("test_image.jpg")
     print(out)

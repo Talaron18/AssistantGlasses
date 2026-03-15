@@ -5,6 +5,7 @@ import time
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from AssistantGlasses.Agent.code.chat import SiliconflowAgent
 from AssistantGlasses.speech_module.stream.record import stream
+from AssistantGlasses.navigation_module.core.nav_controller import NavController
 import queue
 
 """
@@ -15,8 +16,15 @@ class Control():
         self.speech=queue.Queue()
         self.listen=queue.Queue()
         self.action=queue.Queue()
-        self.agent=SiliconflowAgent(speech=self.speech)
-        
+        self.destination=queue.Queue()
+        self.agent=SiliconflowAgent(destination=self.destination,speech=self.speech)
+        self.nav_thread=NavController(
+            tts_queue=self.speech,
+            nav_queue=self.destination
+        )
+        self.nav_thread.daemon=True
+        self.nav_thread.start()
+
     def listen_to_input(self):
         stream_thread=threading.Thread(
             target=stream,
@@ -55,11 +63,14 @@ class Control():
                     # put the camera-control function here
                     print("Taking picuture...")
                 elif current_action=="navi_zoom":
+                    self.destination.put("良乡大学城西地铁站")
                     # put the navigation initialization function here
                     print("Starting navigation...")
                 elif current_action=="navi_kill":
                     # set the status of navigation to False
                     print("Navigation palsed...")
+                    self.nav_thread.shutdown()
+                    self.destination.put("STOP")
                 elif current_action=="on":
                     print("On your command...")
             

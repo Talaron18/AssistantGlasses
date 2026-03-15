@@ -1,5 +1,4 @@
 import serial
-import time
 import sys
 import os
 
