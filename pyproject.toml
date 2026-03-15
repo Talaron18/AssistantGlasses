@@ -1,0 +1,19 @@
+[project]
+name = "assistantglasses"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "openai>=2.24.0",
+    "opencv-python>=4.13.0.92",
+    "torch>=2.0.0",
+    "depth-anything-v2>=0.1.0",
+    "transformers>=4.44.0",
+    "xformers>=0.0.31.post1",
+]
+
+[[tool.uv.index]]
+name = "aliyun"
+url = "https://mirrors.aliyun.com/pypi/simple/"
+#url = "http://mirrors.cloud.aliyuncs.com/pypi/simple/" # 内网
