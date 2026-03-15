@@ -1,0 +1,18 @@
+hardware:
+  gnss:
+    port: "COM4"
+    baud_rate: 38400
+    timeout: 2.0
+
+api:
+  amap:
+    # 运行前于终端执行: export AMAP_API_KEY="真实密钥"
+    key: "AMAP_KEY"
+    walking_url: "https://restapi.amap.com/v3/direction/walking"
+    geocode_url: "https://restapi.amap.com/v3/geocode/regeo"
+    geo_url: "https://restapi.amap.com/v3/geocode/geo"
+
+navigation:
+  deviation_threshold_meters: 15.0  # 偏航判定
+  broadcast_distances: [2300,2200,2100,2050, 10, 3]  # 梯次播报
+  update_rate_hz: 1.0               # 主逻辑刷新

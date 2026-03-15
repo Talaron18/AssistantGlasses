@@ -1,0 +1,1 @@
+VOICES=["zh-CN-XiaoxiaoNeural","ja-JP-NanamiNeural"]

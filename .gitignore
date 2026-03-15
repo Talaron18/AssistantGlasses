@@ -9,3 +9,9 @@ Depth-Anything-V2
 chat
 
 __pycache__
+.env
+*.pv
+*.ppn
+*.jpg
+whisper-base/
+*.pyc

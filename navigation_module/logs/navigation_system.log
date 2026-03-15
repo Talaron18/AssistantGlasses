@@ -1,0 +1,231 @@
+[2026-03-15 16:45:40] [INFO] [AssistantGlasses.navigation_module.core.nav_controller] - 初始化核心控制器...
+[2026-03-15 16:45:40] [WARNING] [config.config_loader] - 正在使用 YAML 中的明文 API Key, 建议改用环境变量配置。
+[2026-03-15 16:45:40] [INFO] [config.config_loader] - 系统配置文件加载成功
+[2026-03-15 16:51:04] [INFO] [AssistantGlasses.navigation_module.core.nav_controller] - 初始化核心控制器...
+[2026-03-15 16:51:04] [WARNING] [config.config_loader] - 正在使用 YAML 中的明文 API Key, 建议改用环境变量配置。
+[2026-03-15 16:51:04] [INFO] [config.config_loader] - 系统配置文件加载成功
+[2026-03-15 16:51:04] [INFO] [sensors.gnss.serial_reader] - 成功连接至 GNSS 模块: COM4 @ 38400bps
+[2026-03-15 16:51:08] [WARNING] [config.config_loader] - 正在使用 YAML 中的明文 API Key, 建议改用环境变量配置。
+[2026-03-15 16:51:08] [INFO] [config.config_loader] - 系统配置文件加载成功
+[2026-03-15 16:51:08] [WARNING] [config.config_loader] - 正在使用 YAML 中的明文 API Key, 建议改用环境变量配置。
+[2026-03-15 16:51:08] [INFO] [config.config_loader] - 系统配置文件加载成功
+[2026-03-15 16:51:08] [INFO] [AssistantGlasses.navigation_module.core.nav_controller] - 导航后台线程已启动
+[2026-03-15 16:53:04] [INFO] [AssistantGlasses.navigation_module.core.nav_controller] - 初始化核心控制器...
+[2026-03-15 16:53:04] [WARNING] [config.config_loader] - 正在使用 YAML 中的明文 API Key, 建议改用环境变量配置。
+[2026-03-15 16:53:04] [INFO] [config.config_loader] - 系统配置文件加载成功
+[2026-03-15 16:53:04] [INFO] [sensors.gnss.serial_reader] - 成功连接至 GNSS 模块: COM4 @ 38400bps
+[2026-03-15 16:53:04] [WARNING] [config.config_loader] - 正在使用 YAML 中的明文 API Key, 建议改用环境变量配置。
+[2026-03-15 16:53:04] [INFO] [config.config_loader] - 系统配置文件加载成功
+[2026-03-15 16:53:04] [WARNING] [config.config_loader] - 正在使用 YAML 中的明文 API Key, 建议改用环境变量配置。
+[2026-03-15 16:53:04] [INFO] [config.config_loader] - 系统配置文件加载成功
+[2026-03-15 16:53:04] [INFO] [AssistantGlasses.navigation_module.core.nav_controller] - 导航后台线程已启动
+[2026-03-15 16:53:08] [INFO] [algo.fusion.linear_kalman] - 卡尔曼滤波器已初始化: 投影原点 (116.165794, 39.728950)
+[2026-03-15 16:54:11] [INFO] [AssistantGlasses.navigation_module.core.nav_controller] - 初始化核心控制器...
+[2026-03-15 16:54:11] [WARNING] [config.config_loader] - 正在使用 YAML 中的明文 API Key, 建议改用环境变量配置。
+[2026-03-15 16:54:11] [INFO] [config.config_loader] - 系统配置文件加载成功
+[2026-03-15 16:54:11] [INFO] [sensors.gnss.serial_reader] - 成功连接至 GNSS 模块: COM4 @ 38400bps
+[2026-03-15 16:54:11] [WARNING] [config.config_loader] - 正在使用 YAML 中的明文 API Key, 建议改用环境变量配置。
+[2026-03-15 16:54:11] [INFO] [config.config_loader] - 系统配置文件加载成功
+[2026-03-15 16:54:11] [WARNING] [config.config_loader] - 正在使用 YAML 中的明文 API Key, 建议改用环境变量配置。
+[2026-03-15 16:54:11] [INFO] [config.config_loader] - 系统配置文件加载成功
+[2026-03-15 16:54:15] [INFO] [AssistantGlasses.navigation_module.core.nav_controller] - 导航后台线程已启动
+[2026-03-15 16:54:15] [INFO] [algo.fusion.linear_kalman] - 卡尔曼滤波器已初始化: 投影原点 (116.165788, 39.728943)
+[2026-03-15 16:54:15] [INFO] [AssistantGlasses.navigation_module.core.nav_controller] - 状态切换 -> PLANNING: 目标 广阳城公园
+[2026-03-15 16:54:15] [INFO] [AssistantGlasses.navigation_module.core.nav_controller] - 开始向高德云端请求 '广阳城公园' 的位置和路线...
+[2026-03-15 16:54:16] [WARNING] [services.amap_provider] - 无法找到地址 '广阳城公园' 的坐标: INVALID_USER_KEY
+[2026-03-15 16:54:16] [ERROR] [AssistantGlasses.navigation_module.core.nav_controller] - 找不到 '广阳城公园' 的位置
+[2026-03-15 16:55:24] [INFO] [AssistantGlasses.navigation_module.core.nav_controller] - 初始化核心控制器...
+[2026-03-15 16:55:24] [WARNING] [config.config_loader] - 正在使用 YAML 中的明文 API Key, 建议改用环境变量配置。
+[2026-03-15 16:55:24] [INFO] [config.config_loader] - 系统配置文件加载成功
+[2026-03-15 16:55:24] [INFO] [sensors.gnss.serial_reader] - 成功连接至 GNSS 模块: COM4 @ 38400bps
+[2026-03-15 16:55:24] [WARNING] [config.config_loader] - 正在使用 YAML 中的明文 API Key, 建议改用环境变量配置。
+[2026-03-15 16:55:24] [INFO] [config.config_loader] - 系统配置文件加载成功
+[2026-03-15 16:55:24] [WARNING] [config.config_loader] - 正在使用 YAML 中的明文 API Key, 建议改用环境变量配置。
+[2026-03-15 16:55:24] [INFO] [config.config_loader] - 系统配置文件加载成功
+[2026-03-15 16:55:24] [INFO] [AssistantGlasses.navigation_module.core.nav_controller] - 导航后台线程已启动
+[2026-03-15 16:55:28] [INFO] [algo.fusion.linear_kalman] - 卡尔曼滤波器已初始化: 投影原点 (116.165724, 39.728961)
+[2026-03-15 16:55:28] [INFO] [AssistantGlasses.navigation_module.core.nav_controller] - 状态切换 -> PLANNING: 目标 良乡大学城北地铁站
+[2026-03-15 16:55:28] [INFO] [AssistantGlasses.navigation_module.core.nav_controller] - 开始向高德云端请求 '良乡大学城北地铁站' 的位置和路线...
+[2026-03-15 16:55:29] [WARNING] [services.amap_provider] - 无法找到地址 '良乡大学城北地铁站' 的坐标: INVALID_USER_KEY
+[2026-03-15 16:55:29] [ERROR] [AssistantGlasses.navigation_module.core.nav_controller] - 找不到 '良乡大学城北地铁站' 的位置
+[2026-03-15 16:57:57] [INFO] [AssistantGlasses.navigation_module.core.nav_controller] - 初始化核心控制器...
+[2026-03-15 16:57:57] [WARNING] [config.config_loader] - 正在使用 YAML 中的明文 API Key, 建议改用环境变量配置。
+[2026-03-15 16:57:57] [INFO] [config.config_loader] - 系统配置文件加载成功
+[2026-03-15 16:57:57] [INFO] [sensors.gnss.serial_reader] - 成功连接至 GNSS 模块: COM4 @ 38400bps
+[2026-03-15 16:57:57] [WARNING] [config.config_loader] - 正在使用 YAML 中的明文 API Key, 建议改用环境变量配置。
+[2026-03-15 16:57:57] [INFO] [config.config_loader] - 系统配置文件加载成功
+[2026-03-15 16:57:57] [WARNING] [config.config_loader] - 正在使用 YAML 中的明文 API Key, 建议改用环境变量配置。
+[2026-03-15 16:57:57] [INFO] [config.config_loader] - 系统配置文件加载成功
+[2026-03-15 16:57:57] [INFO] [AssistantGlasses.navigation_module.core.nav_controller] - 导航后台线程已启动
+[2026-03-15 16:58:01] [INFO] [AssistantGlasses.navigation_module.core.nav_controller] - 状态切换 -> PLANNING: 目标 良乡大学城北地铁站
+[2026-03-15 16:58:01] [INFO] [AssistantGlasses.navigation_module.core.nav_controller] - 开始向高德云端请求 '良乡大学城北地铁站' 的位置和路线...
+[2026-03-15 16:58:02] [WARNING] [services.amap_provider] - 无法找到地址 '良乡大学城北地铁站' 的坐标: INVALID_USER_KEY
+[2026-03-15 16:58:02] [ERROR] [AssistantGlasses.navigation_module.core.nav_controller] - 找不到 '良乡大学城北地铁站' 的位置
+[2026-03-15 16:58:02] [INFO] [algo.fusion.linear_kalman] - 卡尔曼滤波器已初始化: 投影原点 (116.165683, 39.728963)
+[2026-03-15 16:58:37] [INFO] [AssistantGlasses.navigation_module.core.nav_controller] - 状态切换 -> PLANNING: 目标 良乡大学城北地铁站
+[2026-03-15 16:58:37] [INFO] [AssistantGlasses.navigation_module.core.nav_controller] - 开始向高德云端请求 '良乡大学城北地铁站' 的位置和路线...
+[2026-03-15 16:58:37] [WARNING] [services.amap_provider] - 无法找到地址 '良乡大学城北地铁站' 的坐标: INVALID_USER_KEY
+[2026-03-15 16:58:37] [ERROR] [AssistantGlasses.navigation_module.core.nav_controller] - 找不到 '良乡大学城北地铁站' 的位置
+[2026-03-15 17:05:06] [INFO] [AssistantGlasses.navigation_module.core.nav_controller] - 初始化核心控制器...
+[2026-03-15 17:05:06] [WARNING] [config.config_loader] - 正在使用 YAML 中的明文 API Key, 建议改用环境变量配置。
+[2026-03-15 17:05:06] [INFO] [config.config_loader] - 系统配置文件加载成功
+[2026-03-15 17:05:06] [INFO] [sensors.gnss.serial_reader] - 成功连接至 GNSS 模块: COM4 @ 38400bps
+[2026-03-15 17:05:06] [WARNING] [config.config_loader] - 正在使用 YAML 中的明文 API Key, 建议改用环境变量配置。
+[2026-03-15 17:05:06] [INFO] [config.config_loader] - 系统配置文件加载成功
+[2026-03-15 17:05:06] [WARNING] [config.config_loader] - 正在使用 YAML 中的明文 API Key, 建议改用环境变量配置。
+[2026-03-15 17:05:06] [INFO] [config.config_loader] - 系统配置文件加载成功
+[2026-03-15 17:05:06] [INFO] [AssistantGlasses.navigation_module.core.nav_controller] - 导航后台线程已启动
+[2026-03-15 17:05:07] [INFO] [algo.fusion.linear_kalman] - 卡尔曼滤波器已初始化: 投影原点 (116.165653, 39.728966)
+[2026-03-15 17:05:16] [INFO] [AssistantGlasses.navigation_module.core.nav_controller] - 状态切换 -> PLANNING: 目标 良乡大学城北地铁站
+[2026-03-15 17:05:16] [INFO] [AssistantGlasses.navigation_module.core.nav_controller] - 开始向高德云端请求 '良乡大学城北地铁站' 的位置和路线...
+[2026-03-15 17:06:29] [INFO] [AssistantGlasses.navigation_module.core.nav_controller] - 初始化核心控制器...
+[2026-03-15 17:06:29] [WARNING] [config.config_loader] - 正在使用 YAML 中的明文 API Key, 建议改用环境变量配置。
+[2026-03-15 17:06:29] [INFO] [config.config_loader] - 系统配置文件加载成功
+[2026-03-15 17:06:29] [INFO] [sensors.gnss.serial_reader] - 成功连接至 GNSS 模块: COM4 @ 38400bps
+[2026-03-15 17:06:29] [WARNING] [config.config_loader] - 正在使用 YAML 中的明文 API Key, 建议改用环境变量配置。
+[2026-03-15 17:06:29] [INFO] [config.config_loader] - 系统配置文件加载成功
+[2026-03-15 17:06:29] [WARNING] [config.config_loader] - 正在使用 YAML 中的明文 API Key, 建议改用环境变量配置。
+[2026-03-15 17:06:29] [INFO] [config.config_loader] - 系统配置文件加载成功
+[2026-03-15 17:06:29] [INFO] [AssistantGlasses.navigation_module.core.nav_controller] - 导航后台线程已启动
+[2026-03-15 17:06:30] [INFO] [algo.fusion.linear_kalman] - 卡尔曼滤波器已初始化: 投影原点 (116.165643, 39.728990)
+[2026-03-15 17:06:40] [INFO] [AssistantGlasses.navigation_module.core.nav_controller] - 状态切换 -> PLANNING: 目标 良乡大学城北地铁站
+[2026-03-15 17:06:40] [INFO] [AssistantGlasses.navigation_module.core.nav_controller] - 开始向高德云端请求 '良乡大学城北地铁站' 的位置和路线...
+[2026-03-15 17:06:44] [WARNING] [services.amap_provider] - 无法找到地址 '良乡大学城北地铁站' 的坐标: INVALID_USER_KEY
+[2026-03-15 17:06:44] [ERROR] [AssistantGlasses.navigation_module.core.nav_controller] - 找不到 '良乡大学城北地铁站' 的位置
+[2026-03-15 17:10:15] [INFO] [AssistantGlasses.navigation_module.core.nav_controller] - 初始化核心控制器...
+[2026-03-15 17:10:15] [INFO] [config.config_loader] - 已安全从环境变量加载高德地图 API Key
+[2026-03-15 17:10:15] [INFO] [config.config_loader] - 系统配置文件加载成功
+[2026-03-15 17:10:15] [INFO] [sensors.gnss.serial_reader] - 成功连接至 GNSS 模块: COM4 @ 38400bps
+[2026-03-15 17:10:15] [INFO] [config.config_loader] - 已安全从环境变量加载高德地图 API Key
+[2026-03-15 17:10:15] [INFO] [config.config_loader] - 系统配置文件加载成功
+[2026-03-15 17:10:15] [INFO] [config.config_loader] - 已安全从环境变量加载高德地图 API Key
+[2026-03-15 17:10:15] [INFO] [config.config_loader] - 系统配置文件加载成功
+[2026-03-15 17:10:15] [INFO] [AssistantGlasses.navigation_module.core.nav_controller] - 导航后台线程已启动
+[2026-03-15 17:10:16] [INFO] [algo.fusion.linear_kalman] - 卡尔曼滤波器已初始化: 投影原点 (116.165673, 39.728981)
+[2026-03-15 17:10:34] [INFO] [AssistantGlasses.navigation_module.core.nav_controller] - 状态切换 -> PLANNING: 目标 良乡大学城北地铁站
+[2026-03-15 17:10:34] [INFO] [AssistantGlasses.navigation_module.core.nav_controller] - 开始向高德云端请求 '良乡大学城北地铁站' 的位置和路线...
+[2026-03-15 17:10:39] [INFO] [AssistantGlasses.navigation_module.core.nav_controller] - 路线获取成功, 总距离 1563 米
+[2026-03-15 17:10:39] [INFO] [AssistantGlasses.navigation_module.core.nav_controller] - 状态切换 -> NAVIGATING
+[2026-03-15 17:13:40] [ERROR] [sensors.gnss.serial_reader] - 读取数据时串口断开: ClearCommError failed (OSError(9, '句柄无效。', None, 6))
+[2026-03-15 17:13:40] [INFO] [sensors.gnss.serial_reader] - 串口已安全关闭
+[2026-03-15 17:13:40] [INFO] [AssistantGlasses.navigation_module.core.nav_controller] - 控制器已安全释放资源
+[2026-03-15 17:13:40] [INFO] [AssistantGlasses.navigation_module.core.nav_controller] - 导航中途收到新指令，正在中断当前导航...
+[2026-03-15 17:13:40] [INFO] [AssistantGlasses.navigation_module.core.nav_controller] - 接收到中止信号，保持 IDLE 状态
+[2026-03-15 17:17:06] [INFO] [AssistantGlasses.navigation_module.core.nav_controller] - 初始化核心控制器...
+[2026-03-15 17:17:06] [INFO] [config.config_loader] - 已安全从环境变量加载高德地图 API Key
+[2026-03-15 17:17:06] [INFO] [config.config_loader] - 系统配置文件加载成功
+[2026-03-15 17:17:06] [INFO] [sensors.gnss.serial_reader] - 成功连接至 GNSS 模块: COM4 @ 38400bps
+[2026-03-15 17:17:06] [INFO] [config.config_loader] - 已安全从环境变量加载高德地图 API Key
+[2026-03-15 17:17:06] [INFO] [config.config_loader] - 系统配置文件加载成功
+[2026-03-15 17:17:06] [INFO] [config.config_loader] - 已安全从环境变量加载高德地图 API Key
+[2026-03-15 17:17:06] [INFO] [config.config_loader] - 系统配置文件加载成功
+[2026-03-15 17:17:06] [INFO] [AssistantGlasses.navigation_module.core.nav_controller] - 导航后台线程已启动
+[2026-03-15 17:17:07] [INFO] [algo.fusion.linear_kalman] - 卡尔曼滤波器已初始化: 投影原点 (116.165598, 39.729279)
+[2026-03-15 17:17:17] [INFO] [AssistantGlasses.navigation_module.core.nav_controller] - 状态切换 -> PLANNING: 目标 广阳城公园
+[2026-03-15 17:17:17] [INFO] [AssistantGlasses.navigation_module.core.nav_controller] - 开始向高德云端请求 '广阳城公园' 的位置和路线...
+[2026-03-15 17:17:22] [INFO] [AssistantGlasses.navigation_module.core.nav_controller] - 路线获取成功, 总距离 3268 米
+[2026-03-15 17:17:22] [INFO] [AssistantGlasses.navigation_module.core.nav_controller] - 状态切换 -> NAVIGATING
+[2026-03-15 17:24:16] [ERROR] [sensors.gnss.serial_reader] - 读取数据时串口断开: ClearCommError failed (OSError(9, '句柄无效。', None, 6))
+[2026-03-15 17:24:16] [INFO] [sensors.gnss.serial_reader] - 串口已安全关闭
+[2026-03-15 17:24:16] [INFO] [AssistantGlasses.navigation_module.core.nav_controller] - 控制器已安全释放资源
+[2026-03-15 17:24:16] [INFO] [AssistantGlasses.navigation_module.core.nav_controller] - 导航中途收到新指令，正在中断当前导航...
+[2026-03-15 17:24:16] [INFO] [AssistantGlasses.navigation_module.core.nav_controller] - 接收到中止信号，保持 IDLE 状态
+[2026-03-15 17:30:04] [INFO] [AssistantGlasses.navigation_module.core.nav_controller] - 初始化核心控制器...
+[2026-03-15 17:30:04] [INFO] [config.config_loader] - 已安全从环境变量加载高德地图 API Key
+[2026-03-15 17:30:04] [INFO] [config.config_loader] - 系统配置文件加载成功
+[2026-03-15 17:30:04] [INFO] [sensors.gnss.serial_reader] - 成功连接至 GNSS 模块: COM4 @ 38400bps
+[2026-03-15 17:30:04] [INFO] [config.config_loader] - 已安全从环境变量加载高德地图 API Key
+[2026-03-15 17:30:04] [INFO] [config.config_loader] - 系统配置文件加载成功
+[2026-03-15 17:30:04] [INFO] [config.config_loader] - 已安全从环境变量加载高德地图 API Key
+[2026-03-15 17:30:04] [INFO] [config.config_loader] - 系统配置文件加载成功
+[2026-03-15 17:30:04] [INFO] [AssistantGlasses.navigation_module.core.nav_controller] - 导航后台线程已启动
+[2026-03-15 17:30:05] [INFO] [algo.fusion.linear_kalman] - 卡尔曼滤波器已初始化: 投影原点 (116.164136, 39.729426)
+[2026-03-15 17:30:15] [INFO] [AssistantGlasses.navigation_module.core.nav_controller] - 状态切换 -> PLANNING: 目标 广阳城公园
+[2026-03-15 17:30:15] [INFO] [AssistantGlasses.navigation_module.core.nav_controller] - 开始向高德云端请求 '广阳城公园' 的位置和路线...
+[2026-03-15 17:30:20] [INFO] [AssistantGlasses.navigation_module.core.nav_controller] - 路线获取成功, 总距离 3144 米
+[2026-03-15 17:30:20] [INFO] [AssistantGlasses.navigation_module.core.nav_controller] - 状态切换 -> NAVIGATING
+[2026-03-15 17:30:54] [ERROR] [sensors.gnss.serial_reader] - 读取数据时串口断开: ClearCommError failed (OSError(9, '句柄无效。', None, 6))
+[2026-03-15 17:30:54] [INFO] [sensors.gnss.serial_reader] - 串口已安全关闭
+[2026-03-15 17:30:54] [INFO] [AssistantGlasses.navigation_module.core.nav_controller] - 控制器已安全释放资源
+[2026-03-15 17:30:54] [INFO] [AssistantGlasses.navigation_module.core.nav_controller] - 导航中途收到新指令，正在中断当前导航...
+[2026-03-15 17:30:54] [INFO] [AssistantGlasses.navigation_module.core.nav_controller] - 接收到中止信号，保持 IDLE 状态
+[2026-03-15 17:31:46] [INFO] [AssistantGlasses.navigation_module.core.nav_controller] - 初始化核心控制器...
+[2026-03-15 17:31:46] [INFO] [config.config_loader] - 已安全从环境变量加载高德地图 API Key
+[2026-03-15 17:31:46] [INFO] [config.config_loader] - 系统配置文件加载成功
+[2026-03-15 17:31:46] [INFO] [sensors.gnss.serial_reader] - 成功连接至 GNSS 模块: COM4 @ 38400bps
+[2026-03-15 17:31:46] [INFO] [config.config_loader] - 已安全从环境变量加载高德地图 API Key
+[2026-03-15 17:31:46] [INFO] [config.config_loader] - 系统配置文件加载成功
+[2026-03-15 17:31:46] [INFO] [config.config_loader] - 已安全从环境变量加载高德地图 API Key
+[2026-03-15 17:31:46] [INFO] [config.config_loader] - 系统配置文件加载成功
+[2026-03-15 17:31:46] [INFO] [AssistantGlasses.navigation_module.core.nav_controller] - 导航后台线程已启动
+[2026-03-15 17:31:46] [INFO] [algo.fusion.linear_kalman] - 卡尔曼滤波器已初始化: 投影原点 (116.164120, 39.729414)
+[2026-03-15 17:31:56] [INFO] [AssistantGlasses.navigation_module.core.nav_controller] - 状态切换 -> PLANNING: 目标 良乡大学城北地铁站
+[2026-03-15 17:31:56] [INFO] [AssistantGlasses.navigation_module.core.nav_controller] - 开始向高德云端请求 '良乡大学城北地铁站' 的位置和路线...
+[2026-03-15 17:32:02] [INFO] [AssistantGlasses.navigation_module.core.nav_controller] - 路线获取成功, 总距离 1337 米
+[2026-03-15 17:32:02] [INFO] [AssistantGlasses.navigation_module.core.nav_controller] - 状态切换 -> NAVIGATING
+[2026-03-15 17:38:41] [ERROR] [sensors.gnss.serial_reader] - 读取数据时串口断开: ClearCommError failed (OSError(9, '句柄无效。', None, 6))
+[2026-03-15 17:38:41] [INFO] [sensors.gnss.serial_reader] - 串口已安全关闭
+[2026-03-15 17:38:41] [INFO] [AssistantGlasses.navigation_module.core.nav_controller] - 控制器已安全释放资源
+[2026-03-15 17:38:41] [INFO] [AssistantGlasses.navigation_module.core.nav_controller] - 导航中途收到新指令，正在中断当前导航...
+[2026-03-15 17:38:41] [INFO] [AssistantGlasses.navigation_module.core.nav_controller] - 接收到中止信号，保持 IDLE 状态
+[2026-03-15 17:38:56] [INFO] [AssistantGlasses.navigation_module.core.nav_controller] - 状态切换 -> PLANNING: 目标 良乡大学城北地铁站
+[2026-03-15 17:38:56] [INFO] [AssistantGlasses.navigation_module.core.nav_controller] - 开始向高德云端请求 '良乡大学城北地铁站' 的位置和路线...
+[2026-03-15 17:38:58] [INFO] [AssistantGlasses.navigation_module.core.nav_controller] - 路线获取成功, 总距离 1607 米
+[2026-03-15 17:38:58] [INFO] [AssistantGlasses.navigation_module.core.nav_controller] - 状态切换 -> NAVIGATING
+[2026-03-15 17:41:38] [INFO] [AssistantGlasses.navigation_module.core.nav_controller] - 控制器已安全释放资源
+[2026-03-15 17:41:38] [INFO] [AssistantGlasses.navigation_module.core.nav_controller] - 导航中途收到新指令，正在中断当前导航...
+[2026-03-15 17:41:38] [INFO] [AssistantGlasses.navigation_module.core.nav_controller] - 接收到中止信号，保持 IDLE 状态
+[2026-03-15 17:44:07] [INFO] [AssistantGlasses.navigation_module.core.nav_controller] - 初始化核心控制器...
+[2026-03-15 17:44:07] [INFO] [config.config_loader] - 已安全从环境变量加载高德地图 API Key
+[2026-03-15 17:44:07] [INFO] [config.config_loader] - 系统配置文件加载成功
+[2026-03-15 17:44:07] [INFO] [sensors.gnss.serial_reader] - 成功连接至 GNSS 模块: COM4 @ 38400bps
+[2026-03-15 17:44:07] [INFO] [config.config_loader] - 已安全从环境变量加载高德地图 API Key
+[2026-03-15 17:44:07] [INFO] [config.config_loader] - 系统配置文件加载成功
+[2026-03-15 17:44:07] [INFO] [config.config_loader] - 已安全从环境变量加载高德地图 API Key
+[2026-03-15 17:44:07] [INFO] [config.config_loader] - 系统配置文件加载成功
+[2026-03-15 17:44:07] [INFO] [AssistantGlasses.navigation_module.core.nav_controller] - 导航后台线程已启动
+[2026-03-15 17:44:08] [INFO] [algo.fusion.linear_kalman] - 卡尔曼滤波器已初始化: 投影原点 (116.167851, 39.729515)
+[2026-03-15 17:44:16] [INFO] [AssistantGlasses.navigation_module.core.nav_controller] - 状态切换 -> PLANNING: 目标 良乡大学城西地铁站
+[2026-03-15 17:44:16] [INFO] [AssistantGlasses.navigation_module.core.nav_controller] - 开始向高德云端请求 '良乡大学城西地铁站' 的位置和路线...
+[2026-03-15 17:44:21] [INFO] [AssistantGlasses.navigation_module.core.nav_controller] - 路线获取成功, 总距离 2378 米
+[2026-03-15 17:44:21] [INFO] [AssistantGlasses.navigation_module.core.nav_controller] - 状态切换 -> NAVIGATING
+[2026-03-15 17:46:24] [INFO] [AssistantGlasses.navigation_module.core.nav_controller] - 初始化核心控制器...
+[2026-03-15 17:46:24] [INFO] [config.config_loader] - 已安全从环境变量加载高德地图 API Key
+[2026-03-15 17:46:24] [INFO] [config.config_loader] - 系统配置文件加载成功
+[2026-03-15 17:46:24] [INFO] [sensors.gnss.serial_reader] - 成功连接至 GNSS 模块: COM4 @ 38400bps
+[2026-03-15 17:46:24] [INFO] [config.config_loader] - 已安全从环境变量加载高德地图 API Key
+[2026-03-15 17:46:24] [INFO] [config.config_loader] - 系统配置文件加载成功
+[2026-03-15 17:46:24] [INFO] [config.config_loader] - 已安全从环境变量加载高德地图 API Key
+[2026-03-15 17:46:24] [INFO] [config.config_loader] - 系统配置文件加载成功
+[2026-03-15 17:46:24] [INFO] [AssistantGlasses.navigation_module.core.nav_controller] - 导航后台线程已启动
+[2026-03-15 17:46:25] [INFO] [algo.fusion.linear_kalman] - 卡尔曼滤波器已初始化: 投影原点 (116.167835, 39.729514)
+[2026-03-15 17:46:38] [INFO] [AssistantGlasses.navigation_module.core.nav_controller] - 状态切换 -> PLANNING: 目标 良乡大学城西地铁站
+[2026-03-15 17:46:38] [INFO] [AssistantGlasses.navigation_module.core.nav_controller] - 开始向高德云端请求 '良乡大学城西地铁站' 的位置和路线...
+[2026-03-15 17:46:43] [INFO] [AssistantGlasses.navigation_module.core.nav_controller] - 路线获取成功, 总距离 2377 米
+[2026-03-15 17:46:43] [INFO] [AssistantGlasses.navigation_module.core.nav_controller] - 状态切换 -> NAVIGATING
+[2026-03-15 17:49:59] [ERROR] [sensors.gnss.serial_reader] - 读取数据时串口断开: ClearCommError failed (OSError(9, '句柄无效。', None, 6))
+[2026-03-15 17:49:59] [INFO] [sensors.gnss.serial_reader] - 串口已安全关闭
+[2026-03-15 17:49:59] [INFO] [AssistantGlasses.navigation_module.core.nav_controller] - 控制器已安全释放资源
+[2026-03-15 17:49:59] [INFO] [AssistantGlasses.navigation_module.core.nav_controller] - 导航中途收到新指令，正在中断当前导航...
+[2026-03-15 17:49:59] [INFO] [AssistantGlasses.navigation_module.core.nav_controller] - 接收到中止信号，保持 IDLE 状态
+[2026-03-15 17:50:36] [INFO] [AssistantGlasses.navigation_module.core.nav_controller] - 状态切换 -> PLANNING: 目标 良乡大学城西地铁站
+[2026-03-15 17:50:36] [INFO] [AssistantGlasses.navigation_module.core.nav_controller] - 开始向高德云端请求 '良乡大学城西地铁站' 的位置和路线...
+[2026-03-15 17:50:38] [INFO] [AssistantGlasses.navigation_module.core.nav_controller] - 路线获取成功, 总距离 2298 米
+[2026-03-15 17:50:38] [INFO] [AssistantGlasses.navigation_module.core.nav_controller] - 状态切换 -> NAVIGATING
+[2026-03-15 17:52:06] [INFO] [AssistantGlasses.navigation_module.core.nav_controller] - 导航中途收到新指令，正在中断当前导航...
+[2026-03-15 17:52:06] [INFO] [AssistantGlasses.navigation_module.core.nav_controller] - 状态切换 -> PLANNING: 目标 故宫
+[2026-03-15 17:52:06] [INFO] [AssistantGlasses.navigation_module.core.nav_controller] - 开始向高德云端请求 '故宫' 的位置和路线...
+[2026-03-15 17:52:08] [INFO] [AssistantGlasses.navigation_module.core.nav_controller] - 路线获取成功, 总距离 35183 米
+[2026-03-15 17:52:08] [INFO] [AssistantGlasses.navigation_module.core.nav_controller] - 状态切换 -> NAVIGATING
+[2026-03-15 17:52:33] [INFO] [AssistantGlasses.navigation_module.core.nav_controller] - 导航中途收到新指令，正在中断当前导航...
+[2026-03-15 17:52:33] [INFO] [AssistantGlasses.navigation_module.core.nav_controller] - 状态切换 -> PLANNING: 目标 良乡大学城西地铁站
+[2026-03-15 17:52:33] [INFO] [AssistantGlasses.navigation_module.core.nav_controller] - 开始向高德云端请求 '良乡大学城西地铁站' 的位置和路线...
+[2026-03-15 17:52:34] [INFO] [AssistantGlasses.navigation_module.core.nav_controller] - 路线获取成功, 总距离 2298 米
+[2026-03-15 17:52:34] [INFO] [AssistantGlasses.navigation_module.core.nav_controller] - 状态切换 -> NAVIGATING
+[2026-03-15 17:56:37] [INFO] [AssistantGlasses.navigation_module.core.nav_controller] - 控制器已安全释放资源
+[2026-03-15 17:56:37] [INFO] [AssistantGlasses.navigation_module.core.nav_controller] - 导航中途收到新指令，正在中断当前导航...
+[2026-03-15 17:56:37] [INFO] [AssistantGlasses.navigation_module.core.nav_controller] - 接收到中止信号，保持 IDLE 状态
+[2026-03-15 17:56:56] [INFO] [AssistantGlasses.navigation_module.core.nav_controller] - 状态切换 -> PLANNING: 目标 良乡大学城西地铁站
+[2026-03-15 17:56:56] [INFO] [AssistantGlasses.navigation_module.core.nav_controller] - 开始向高德云端请求 '良乡大学城西地铁站' 的位置和路线...
+[2026-03-15 17:56:58] [INFO] [AssistantGlasses.navigation_module.core.nav_controller] - 路线获取成功, 总距离 2298 米
+[2026-03-15 17:56:58] [INFO] [AssistantGlasses.navigation_module.core.nav_controller] - 状态切换 -> NAVIGATING
