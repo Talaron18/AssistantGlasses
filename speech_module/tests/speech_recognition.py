@@ -28,7 +28,7 @@ def speech_test(path):
         output=True
     )
     # check out for streaming initiation
-    if stream!=None and audio!=None:
+    if stream is not None and audio is not None:
         print("System ready...")
     else:
         print("Streaming failed...")

@@ -32,7 +32,7 @@ def recognition(pipe, audio_buffer,rate,denoise=False):
     return result.texts[0]
 
 def voice_to_text(frames,rate,q):
-    whisper=os.environ.get("WHISPER_DIR")
+    whisper=os.environ.get("WHISPER_TURBO")
     print("Model path found..." if whisper else "Model not found...")
     pipe=openvino_genai.WhisperPipeline(whisper,"GPU")
     if pipe is not None:

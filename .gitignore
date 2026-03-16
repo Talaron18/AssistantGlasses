@@ -4,3 +4,4 @@
 *.jpg
 whisper-base/
 *.pyc
+whisper-ov-turbo/

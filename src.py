@@ -63,7 +63,6 @@ class Control():
                     # put the camera-control function here
                     print("Taking picuture...")
                 elif current_action=="navi_zoom":
-                    self.destination.put("良乡大学城西地铁站")
                     # put the navigation initialization function here
                     print("Starting navigation...")
                 elif current_action=="navi_kill":
