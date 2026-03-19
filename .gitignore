@@ -1,3 +1,14 @@
+.venv
+
+checkpoints
+measure_img
+
+utils
+
+Depth-Anything-V2
+chat
+
+__pycache__
 .env
 *.pv
 *.ppn
