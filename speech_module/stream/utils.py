@@ -9,13 +9,13 @@ def wake(handle, pcm_bytes):
     pcm_ints = struct.unpack_from("h" * handle.frame_length, pcm_bytes)
     return handle.process(pcm_ints) == 0
 
-def recognition(pipe, audio_buffer,rate,denoise=False):
+def recognition(pipe, audio_buffer,rate,denoise_mode=False):
     print(f"Denoise settings:{denoise}")
     if audio_buffer is None or len(audio_buffer)==0:
         print("Invalid input detected...")
         return ""
     # set "denoise=True" to activate denoise function
-    if denoise:
+    if denoise_mode:
         audio_ready=denoise(audio_buffer,rate)
     else:
         audio_ready=audio_buffer
@@ -31,7 +31,7 @@ def recognition(pipe, audio_buffer,rate,denoise=False):
         traceback.print_exc()
     return result.texts[0]
 
-def voice_to_text(frames,rate,q):
+def voice_to_text(frames,rate):
     whisper=os.environ.get("WHISPER_TURBO")
     print("Model path found..." if whisper else "Model not found...")
     pipe=openvino_genai.WhisperPipeline(whisper,"GPU")
@@ -42,7 +42,7 @@ def voice_to_text(frames,rate,q):
         print(text)
     else:
         print("Pipe Invalid...")
-    q.put(text)
+    return text
 
 def denoise(audio_int16,rate):
     processed_audio=nr.reduce_noise(y=audio_int16,sr=rate,prop_decrease=0.6)
