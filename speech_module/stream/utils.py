@@ -10,7 +10,7 @@ def wake(handle, pcm_bytes):
     return handle.process(pcm_ints) == 0
 
 def recognition(pipe, audio_buffer,rate,denoise_mode=False):
-    print(f"Denoise settings:{denoise}")
+    print(f"Denoise settings:{denoise_mode}")
     if audio_buffer is None or len(audio_buffer)==0:
         print("Invalid input detected...")
         return ""
@@ -42,6 +42,7 @@ def voice_to_text(frames,rate):
         print(text)
     else:
         print("Pipe Invalid...")
+    
     return text
 
 def denoise(audio_int16,rate):
