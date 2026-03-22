@@ -2,6 +2,7 @@ import struct
 import numpy as np
 import openvino_genai
 import os
+import time
 import noisereduce as nr
 from datetime import timedelta
 # keyword check 
@@ -31,8 +32,9 @@ def recognition(pipe, audio_buffer,rate,denoise_mode=False):
         traceback.print_exc()
     return result.texts[0]
 
-def voice_to_text(frames,rate):
-    whisper=os.environ.get("WHISPER_TURBO")
+def voice_to_text(frames,rate,res_q):
+    st=time.time()
+    whisper=os.environ.get("WHISPER_OV_V2")
     print("Model path found..." if whisper else "Model not found...")
     pipe=openvino_genai.WhisperPipeline(whisper,"GPU")
     if pipe is not None:
@@ -42,8 +44,8 @@ def voice_to_text(frames,rate):
         print(text)
     else:
         print("Pipe Invalid...")
-    
-    return text
+    res_q.put(text)
+    print(f"stt recognition time:{time.time()-st:.2f}s")
 
 def denoise(audio_int16,rate):
     processed_audio=nr.reduce_noise(y=audio_int16,sr=rate,prop_decrease=0.6)

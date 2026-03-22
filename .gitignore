@@ -16,3 +16,4 @@ __pycache__
 whisper-base/
 *.pyc
 whisper-ov-turbo/
+whisper-ov-v2

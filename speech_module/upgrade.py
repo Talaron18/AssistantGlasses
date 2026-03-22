@@ -7,10 +7,10 @@ from openvino_tokenizers import convert_tokenizer
 import openvino as ov
 
 load_dotenv()
-output_dir = os.environ.get("DIR", "./whisper-ov-model")
+output_dir = os.environ.get("DIR", "./whisper-ov-model-v2")
 model_id = "sandy1990418/whisper-large-v3-turbo-chinese"
 
-model = OVModelForSpeechSeq2Seq.from_pretrained(model_id, export=True)
+model = OVModelForSpeechSeq2Seq.from_pretrained(model_id, compile=True, device="GPU", export=True)
 model.save_pretrained(output_dir)
 
 processor = AutoProcessor.from_pretrained(model_id, feature_size=128)

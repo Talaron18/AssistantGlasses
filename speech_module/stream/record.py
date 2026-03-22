@@ -73,7 +73,7 @@ def stream(listen_q,action_q):
                     system=False
                     activate_listening=False
                     if not blank and len(audio_buffer)>0:
-                        process_stt(audio_buffer,audio.sample_rate,stt_queue)
+                        #process_stt(audio_buffer,audio.sample_rate,stt_queue)
                         audio_buffer=[]
                     if keywords==3:
                         action_q.put("agent")
