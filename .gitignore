@@ -17,3 +17,4 @@ whisper-base/
 *.pyc
 whisper-ov-turbo/
 whisper-ov-v2
+gemma-local/
