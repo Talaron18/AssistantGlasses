@@ -132,6 +132,16 @@ class NavController(threading.Thread):
             if self._gcj_lon is None:
                 return None
             return self._gcj_lon, self._gcj_lat
+        
+    def force_set_position(self, gcj_lon: float, gcj_lat: float) -> None:
+        """【地下室专用测试】强制改写当前位置，模拟人已经走到这里"""
+        with self._pos_lock:
+            # 【新增判断】如果是第一次获取到位置，才初始化卡尔曼滤波器
+            if self._gcj_lon is None:
+                self.kalman.initialize(gcj_lon, gcj_lat)
+                
+            self._gcj_lon = gcj_lon
+            self._gcj_lat = gcj_lat
 
     def _update_gps(self) -> None:
         """Read one NMEA sentence and update the Kalman-filtered GCJ-02 position."""
@@ -224,7 +234,7 @@ class NavController(threading.Thread):
 
         dist_to_exit = haversine_distance(lon, lat, *exit_pt)
         tail_dist    = sum(
-            s.get('distance', 0) for s in self._steps[self._step_idx + 1:]
+            float(s.get('distance', 0)) for s in self._steps[self._step_idx + 1:]
         )
         return dist_to_exit + tail_dist
 
@@ -251,7 +261,7 @@ class NavController(threading.Thread):
         next_step   = self._steps[self._step_idx]
         instruction = next_step.get('instruction', str(next_step))
         remaining   = sum(
-            s.get('distance', 0) for s in self._steps[self._step_idx:]
+            float(s.get('distance', 0)) for s in self._steps[self._step_idx:]
         )
         logger.info(f"步骤推进 → 第 {self._step_idx + 1} / {len(self._steps)} 步")
         self.tts_queue.put(f"前方约 {remaining} 米，{instruction}")
