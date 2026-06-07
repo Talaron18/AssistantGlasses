@@ -141,7 +141,7 @@ class BaseAgent:
                 memory+=content
                 sentence_buffer+=content
             if (is_first_chunk and word_count>=2) or word_count >= 6 or any(p in sentence_buffer for p in punctuation):
-                if "&]" in sentence_buffer:
+                if "[&location/" in sentence_buffer:
                     match=re.search(pattern,sentence_buffer)
                     self.destination.put(match.group(1).strip())
                     self.tts_queue.put(f'请问您是要导航到{match.group(1).strip()}吗？')

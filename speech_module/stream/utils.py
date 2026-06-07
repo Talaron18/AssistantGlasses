@@ -25,7 +25,7 @@ def recognition(pipe, audio_buffer,rate,denoise_mode=False):
         # do not mix multiple languages
         # follow the format: "<|**|>" to set languages
         # eg. "<|en|>""<|de|>""<|fr|>""<|ja|>""<|zh|>" ISO-639-1
-        result = pipe.generate(audio_float32.tolist(),language="<|zh|>")
+        result = pipe.generate(audio_float32.tolist(),language="<|ja|>")
     except Exception as e:
         print(f"Error occurred:{e}")
         import traceback
@@ -34,7 +34,7 @@ def recognition(pipe, audio_buffer,rate,denoise_mode=False):
 
 def voice_to_text(frames,rate,res_q):
     st=time.time()
-    whisper=os.environ.get("WHISPER_OV_V2")
+    whisper=os.environ.get("WHISPER_DIR")
     print("Model path found..." if whisper else "Model not found...")
     pipe=openvino_genai.WhisperPipeline(whisper,"GPU")
     if pipe is not None:

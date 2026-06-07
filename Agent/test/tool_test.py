@@ -1,39 +1,54 @@
-import pyaudio
-import os
-from dotenv import load_dotenv
-from pydub import AudioSegment as pd
+# AssistantGlasses/Agent/test/tool_test.py
 
-def quicktest(mode="OFF"):
-    if mode=="ON":
-        load_dotenv()
-        path=os.environ.get("TEST_MUSIC")
-        if path:
-            print(path)
-        else:
-            print("Path not found...")
-        audio=pd.from_file(path,format="m4a")
-        audio=audio.set_frame_rate(16000).set_channels(1).set_sample_width(2)
-        pa=pyaudio.PyAudio()
-        stream=pa.open(
-            format=pa.get_format_from_width(audio.sample_width),
-            channels=audio.channels,
-            rate=audio.frame_rate,
-            output=True
-        )
-        try:
-            length=1024
-            data=audio.raw_data
-            bytes=length*2
-            for i in range(0,len(data),bytes):
-                chunk=data[i:i+bytes]
-                # play and check if audio is loaded successfully, delete the next line after checking
-                stream.write(chunk)
-        except Exception as e:
-            print(f"Error: {e}")
-        finally:
-            stream.stop_stream()
-            stream.close()
-            pa.terminate()
-    else:
-        print("Failed to activate tool...")
-    return "you are fooled"
+import cv2
+import os
+from datetime import datetime
+
+
+def quicktest(mode="ON"):
+    """
+    Camera tool for AssistantGlasses.
+
+    Returns:
+        {
+            "status": "success",
+            "image_path": "...jpg"
+        }
+    """
+
+    if mode != "ON":
+        return {
+            "status": "disabled"
+        }
+
+    camera = cv2.VideoCapture(0)
+
+    if not camera.isOpened():
+        return {
+            "status": "error",
+            "message": "camera not found"
+        }
+    for _ in range(5):
+        ret, frame = camera.read()
+    ret, frame = camera.read()
+
+    camera.release()
+
+    if not ret:
+        return {
+            "status": "error",
+            "message": "capture failed"
+        }
+
+    os.makedirs("captures", exist_ok=True)
+
+    filename = datetime.now().strftime(
+        "captures/%Y%m%d_%H%M%S.jpg"
+    )
+
+    cv2.imwrite(filename, frame)
+
+    return {
+        "status": "success",
+        "image_path": filename
+    }
