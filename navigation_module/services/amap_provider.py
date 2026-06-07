@@ -79,8 +79,7 @@ class AMapProvider(BaseMapAPI):
                 }
                 
                 # 提取每一步自然语言指令，准备发给语音模块
-                for step in path['steps']:
-                    route_info["steps"].append(step['instruction'])
+                route_info["steps"] = path['steps']
                     
                 return route_info
             else:
