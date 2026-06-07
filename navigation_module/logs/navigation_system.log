@@ -229,3 +229,39 @@
 [2026-03-15 17:56:56] [INFO] [AssistantGlasses.navigation_module.core.nav_controller] - 开始向高德云端请求 '良乡大学城西地铁站' 的位置和路线...
 [2026-03-15 17:56:58] [INFO] [AssistantGlasses.navigation_module.core.nav_controller] - 路线获取成功, 总距离 2298 米
 [2026-03-15 17:56:58] [INFO] [AssistantGlasses.navigation_module.core.nav_controller] - 状态切换 -> NAVIGATING
+[2026-05-20 15:47:24] [INFO] [AssistantGlasses.navigation_module.core.nav_controller] - 初始化核心控制器...
+[2026-05-20 15:47:24] [INFO] [config.config_loader] - 已安全从环境变量加载高德地图 API Key
+[2026-05-20 15:47:24] [INFO] [config.config_loader] - 系统配置文件加载成功
+[2026-05-20 15:47:24] [ERROR] [sensors.gnss.serial_reader] - 无法打开串口 COM4
+[2026-05-20 15:47:24] [INFO] [config.config_loader] - 已安全从环境变量加载高德地图 API Key
+[2026-05-20 15:47:24] [INFO] [config.config_loader] - 系统配置文件加载成功
+[2026-05-20 15:47:24] [INFO] [config.config_loader] - 已安全从环境变量加载高德地图 API Key
+[2026-05-20 15:47:24] [INFO] [config.config_loader] - 系统配置文件加载成功
+[2026-05-20 15:47:24] [INFO] [AssistantGlasses.navigation_module.core.nav_controller] - 导航后台线程已启动
+[2026-05-20 15:53:42] [INFO] [AssistantGlasses.navigation_module.core.nav_controller] - 初始化核心控制器...
+[2026-05-20 15:53:42] [INFO] [config.config_loader] - 已安全从环境变量加载高德地图 API Key
+[2026-05-20 15:53:42] [INFO] [config.config_loader] - 系统配置文件加载成功
+[2026-05-20 15:53:42] [ERROR] [sensors.gnss.serial_reader] - 无法打开串口 COM4
+[2026-05-20 15:53:42] [INFO] [config.config_loader] - 已安全从环境变量加载高德地图 API Key
+[2026-05-20 15:53:42] [INFO] [config.config_loader] - 系统配置文件加载成功
+[2026-05-20 15:53:42] [INFO] [config.config_loader] - 已安全从环境变量加载高德地图 API Key
+[2026-05-20 15:53:42] [INFO] [config.config_loader] - 系统配置文件加载成功
+[2026-05-20 15:53:42] [INFO] [AssistantGlasses.navigation_module.core.nav_controller] - 导航后台线程已启动
+[2026-05-20 15:55:52] [INFO] [AssistantGlasses.navigation_module.core.nav_controller] - 初始化核心控制器...
+[2026-05-20 15:55:52] [INFO] [config.config_loader] - 已安全从环境变量加载高德地图 API Key
+[2026-05-20 15:55:52] [INFO] [config.config_loader] - 系统配置文件加载成功
+[2026-05-20 15:55:52] [ERROR] [sensors.gnss.serial_reader] - 无法打开串口 COM4
+[2026-05-20 15:55:52] [INFO] [config.config_loader] - 已安全从环境变量加载高德地图 API Key
+[2026-05-20 15:55:52] [INFO] [config.config_loader] - 系统配置文件加载成功
+[2026-05-20 15:55:52] [INFO] [config.config_loader] - 已安全从环境变量加载高德地图 API Key
+[2026-05-20 15:55:52] [INFO] [config.config_loader] - 系统配置文件加载成功
+[2026-05-20 15:55:52] [INFO] [AssistantGlasses.navigation_module.core.nav_controller] - 导航后台线程已启动
+[2026-05-20 15:57:46] [INFO] [AssistantGlasses.navigation_module.core.nav_controller] - 初始化核心控制器...
+[2026-05-20 15:57:46] [INFO] [config.config_loader] - 已安全从环境变量加载高德地图 API Key
+[2026-05-20 15:57:46] [INFO] [config.config_loader] - 系统配置文件加载成功
+[2026-05-20 15:57:46] [ERROR] [sensors.gnss.serial_reader] - 无法打开串口 COM4
+[2026-05-20 15:57:46] [INFO] [config.config_loader] - 已安全从环境变量加载高德地图 API Key
+[2026-05-20 15:57:46] [INFO] [config.config_loader] - 系统配置文件加载成功
+[2026-05-20 15:57:46] [INFO] [config.config_loader] - 已安全从环境变量加载高德地图 API Key
+[2026-05-20 15:57:46] [INFO] [config.config_loader] - 系统配置文件加载成功
+[2026-05-20 15:57:46] [INFO] [AssistantGlasses.navigation_module.core.nav_controller] - 导航后台线程已启动

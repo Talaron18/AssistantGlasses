@@ -18,3 +18,5 @@ whisper-base/
 whisper-ov-turbo/
 whisper-ov-v2
 gemma-local/
+voice/
+gemma4-e2b/

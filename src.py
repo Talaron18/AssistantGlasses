@@ -17,7 +17,7 @@ class Control():
         self.listen=queue.Queue()
         self.action=queue.Queue()
         self.destination=queue.Queue()
-        self.agent=SiliconflowAgent(destination=self.destination,speech=self.speech)
+        self.agent=SiliconflowAgent(destination=self.destination,role="jk",speech=self.speech)
         self.nav_thread=NavController(
             tts_queue=self.speech,
             nav_queue=self.destination
