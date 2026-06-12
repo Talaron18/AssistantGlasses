@@ -1,32 +1,3 @@
-"""
-NavController — blind-cane navigation state machine (background thread).
-
-Fixes and improvements over v1
-────────────────────────────────
-Thread-safe GPS      – _pos_lock guards every read/write of the current position;
-                       PLANNING polls until a valid fix arrives before touching AMap.
-
-Step-by-step nav     – _step_idx tracks the active route step.  When the user
-                       walks within STEP_ADVANCE_M of a step's exit waypoint, the
-                       next step's instruction is announced automatically.
-
-Trajectory distance  – remaining = haversine(pos → step_exit) + Σ(tail step
-                       distances), not haversine(pos → final target).  Falls back
-                       to polyline-parsed exit points when AMapProvider does not
-                       populate exit_lon/exit_lat directly.
-
-Threshold broadcasts – "passed-below" detection with an _announced set that resets
-                       per route; each threshold fires exactly once, with no
-                       blocking sleep inside the hot loop.
-
-Queue hygiene        – mid-route interrupt consumes and dispatches the command
-                       inline; new destination immediately re-enters PLANNING with
-                       a user-facing announcement.
-
-Public tool API      – start_navigation / stop_navigation / get_nav_status can be
-                       called directly by Gemma4Agent's tool dispatcher.
-"""
-
 from __future__ import annotations
 
 import time
@@ -48,46 +19,25 @@ from utils.logger import get_logger
 
 logger = get_logger(__name__)
 
-# ── tunable constants ──────────────────────────────────────────────────────────
-# Pedestrian walks ~1.4 m/s; 15 m gives ~10 s of advance warning for a turn.
+
 STEP_ADVANCE_M: float = 15.0
-# Straight-line distance to the final target at which we declare arrival.
 ARRIVAL_M: float = 8.0
-# Loop interval (seconds). 50 ms → 20 Hz, plenty for walking navigation.
 LOOP_INTERVAL: float = 0.05
-# How long to wait between GPS-fix polls while in PLANNING.
 GPS_POLL_S: float = 0.5
+MAX_USABLE_HDOP: float = 8.0
 
 
 class NavController(threading.Thread):
     """
     盲人智能拐杖导航系统 (多线程状态机)
-
-    State machine
-    ─────────────
-    IDLE → PLANNING → NAVIGATING → IDLE
-            ↑___________________________↑  (arrival / stop / new destination)
-
-    Thread-safety note
-    ──────────────────
-    GPS position (_gcj_lon / _gcj_lat) is written by the run() loop and may be
-    read from outside (e.g. get_nav_status).  All accesses go through _pos_lock.
-
-    Integration with Gemma4Agent
-    ─────────────────────────────
-    Pass the NavController instance to Gemma4Agent(nav_controller=...).
-    The agent automatically registers start_navigation / stop_navigation /
-    get_nav_status as LLM-callable tools and delegates calls to the methods
-    defined at the bottom of this class.
     """
 
     def __init__(self, nav_queue: queue.Queue, tts_queue: queue.Queue) -> None:
         super().__init__(daemon=True)
         logger.info("初始化核心控制器…")
 
-        # ── inter-thread communication ─────────────────────────────────────
-        self.nav_queue = nav_queue    # receives destination strings or "STOP"
-        self.tts_queue = tts_queue    # sends speech strings out
+        self.nav_queue = nav_queue
+        self.tts_queue = tts_queue
 
         # ── sensors & algorithms ───────────────────────────────────────────
         self.reader      = GNSSSerialReader()
@@ -100,7 +50,6 @@ class NavController(threading.Thread):
 
         # ── config ────────────────────────────────────────────────────────
         config = load_config()
-        # Store descending so we can pop announced thresholds in order.
         self.broadcast_distances: list[int] = sorted(
             config['navigation']['broadcast_distances'], reverse=True
         )
@@ -110,21 +59,24 @@ class NavController(threading.Thread):
         self._gcj_lon:  float | None   = None
         self._gcj_lat:  float | None   = None
 
+        # ── Kalman filter timing & quality ─────────────────────────────────
+        # 记录上一次 KF 更新的时间戳, 用于 predict(dt)
+        self._last_kf_ts: float | None = None
+        # 最近一帧 GGA 的 定位质量, 默认乐观值
+        self._last_hdop: float = 1.0
+
         # ── state machine ──────────────────────────────────────────────────
-        self.state:       str        = "IDLE"
-        self.target_name: str | None = None
+        self.state:       str          = "IDLE"
+        self.target_name: str | None   = None
         self.target_lon:  float | None = None
         self.target_lat:  float | None = None
 
-        # ── route tracking (reset on each new route) ───────────────────────
-        self._steps:     list[dict] = []   # step dicts from AMap
-        self._step_idx:  int        = 0    # index of the step being navigated
-        self._announced: set[int]   = set()  # thresholds already spoken
-
-    # ──────────────────────────────────────────────────────────────────────────
+        # ── route tracking───────────────────────
+        self._steps:     list[dict] = []
+        self._step_idx:  int        = 0
+        self._announced: set[int]   = set()
+        
     # GPS helpers
-    # ──────────────────────────────────────────────────────────────────────────
-
     @property
     def current_pos(self) -> tuple[float, float] | None:
         """Return (gcj_lon, gcj_lat) or None if no fix yet."""
@@ -132,30 +84,46 @@ class NavController(threading.Thread):
             if self._gcj_lon is None:
                 return None
             return self._gcj_lon, self._gcj_lat
-        
+
     def force_set_position(self, gcj_lon: float, gcj_lat: float) -> None:
-        """【地下室专用测试】强制改写当前位置，模拟人已经走到这里"""
+        """
+        强制设置当前位置，绕过卡尔曼滤波器。
+        """
         with self._pos_lock:
-            # 【新增判断】如果是第一次获取到位置，才初始化卡尔曼滤波器
-            if self._gcj_lon is None:
-                self.kalman.initialize(gcj_lon, gcj_lat)
-                
             self._gcj_lon = gcj_lon
             self._gcj_lat = gcj_lat
 
     def _update_gps(self) -> None:
         """读取 NMEA 数据，并排干缓冲区防止历史数据积压导致定位滞后"""
+        # 一次最多连读 50 行，防止死循环阻塞，同时确保读到最新的一手坐标
         for _ in range(50):
             raw = self.reader.read_data()
             if not raw:
                 break  # 缓冲区已经读空，跳出循环
-                
+
             parsed = self.parser.parse(raw)
-            if (
-                parsed
-                and parsed.get('type') == 'RMC'
-                and parsed.get('is_valid')
-            ):
+            if not parsed:
+                continue
+
+            # GGA: 提取定位质量 (HDOP), 注入滤波器做噪声自适应
+            if parsed.get('type') == 'GGA':
+                self._last_hdop = parsed.get('hdop', 99.9)
+                self.kalman.set_hdop(self._last_hdop)
+                continue
+
+            # RMC: 主定位帧
+            if parsed.get('type') == 'RMC' and parsed.get('is_valid'):
+                # HDOP 过大说明几何条件极差, 丢弃该帧
+                if self._last_hdop > MAX_USABLE_HDOP:
+                    logger.debug(f"HDOP={self._last_hdop:.1f} 过大, 丢弃本帧定位")
+                    continue
+
+                # 每次 update 前必须 predict(dt), 否则滤波器僵死
+                now = time.monotonic()
+                dt = (now - self._last_kf_ts) if self._last_kf_ts is not None else 0.0
+                self._last_kf_ts = now
+                self.kalman.predict(dt)
+
                 self.kalman.update((
                     parsed['longitude'],
                     parsed['latitude'],
@@ -171,7 +139,6 @@ class NavController(threading.Thread):
     def _wait_for_fix(self) -> bool:
         """
         Block (with GPS polling) until a valid position is available.
-        Returns True when a fix is acquired, False if a queue command interrupts.
         """
         if self.current_pos is not None:
             return True
@@ -184,20 +151,9 @@ class NavController(threading.Thread):
                 return False   # user sent a new command; bail out
         return True
 
-    # ──────────────────────────────────────────────────────────────────────────
     # Route step helpers
-    # ──────────────────────────────────────────────────────────────────────────
-
     @staticmethod
     def _get_step_exit(step: dict) -> tuple[float, float] | None:
-        """
-        Return the (lon, lat) exit waypoint for a route step.
-
-        Tries two sources in order:
-        1. Explicit exit_lon / exit_lat fields (set by AMapProvider).
-        2. Last coordinate pair in the 'polyline' string
-           (AMap format: "lon1,lat1;lon2,lat2;…").
-        """
         if step.get('exit_lon') and step.get('exit_lat'):
             return step['exit_lon'], step['exit_lat']
 
@@ -214,24 +170,13 @@ class NavController(threading.Thread):
         return None
 
     def _remaining_distance(self, lon: float, lat: float) -> float:
-        """
-        Trajectory-based remaining distance (metres).
-
-        = haversine(current_pos → current step exit waypoint)
-          + sum of all subsequent step distances.
-
-        Falls back to haversine(current_pos → target) when no waypoint data
-        is available (e.g. AMap returned no polyline for any step).
-        """
         if not self._steps or self._step_idx >= len(self._steps):
-            # All steps done or no step data — use straight-line as best guess
             return haversine_distance(lon, lat, self.target_lon, self.target_lat)
 
-        step     = self._steps[self._step_idx]
-        exit_pt  = self._get_step_exit(step)
+        step    = self._steps[self._step_idx]
+        exit_pt = self._get_step_exit(step)
 
         if exit_pt is None:
-            # No waypoint — degrade to haversine of target
             return haversine_distance(lon, lat, self.target_lon, self.target_lat)
 
         dist_to_exit = haversine_distance(lon, lat, *exit_pt)
@@ -241,11 +186,6 @@ class NavController(threading.Thread):
         return dist_to_exit + tail_dist
 
     def _try_advance_step(self, lon: float, lat: float) -> None:
-        """
-        If the user is within STEP_ADVANCE_M of the current step's exit
-        waypoint, advance to the next step and speak its instruction.
-        Advances at most one step per call to stay in sync with the walk.
-        """
         if not self._steps or self._step_idx >= len(self._steps):
             return
 
@@ -266,13 +206,10 @@ class NavController(threading.Thread):
             float(s.get('distance', 0)) for s in self._steps[self._step_idx:]
         )
         logger.info(f"步骤推进 → 第 {self._step_idx + 1} / {len(self._steps)} 步")
-        self.tts_queue.put(f"前方约 {remaining} 米，{instruction}")
+        # 取整
+        self.tts_queue.put(f"前方约 {int(round(remaining))} 米，{instruction}")
 
     def _check_distance_broadcast(self, remaining: float) -> None:
-        """
-        Announce each distance threshold exactly once per route,
-        the first time `remaining` passes below it.
-        """
         for threshold in self.broadcast_distances:
             if threshold not in self._announced and remaining <= threshold:
                 self._announced.add(threshold)
@@ -285,10 +222,17 @@ class NavController(threading.Thread):
         self._step_idx  = 0
         self._announced = set()
 
-    # ──────────────────────────────────────────────────────────────────────────
-    # Main loop
-    # ──────────────────────────────────────────────────────────────────────────
+    def _seed_announced_thresholds(self, total_dist) -> None:
+        """
+        规划成功后, 把所有 ≥ 路线总长的阈值预先标记为"已播报"。
+        """
+        try:
+            total = float(total_dist)
+        except (TypeError, ValueError):
+            return  # 总距离未知时不做预填充
+        self._announced = {t for t in self.broadcast_distances if t >= total}
 
+    # Main loop
     def run(self) -> None:
         logger.info("导航后台线程已启动")
 
@@ -301,7 +245,7 @@ class NavController(threading.Thread):
                 try:
                     new_target = self.nav_queue.get_nowait()
                 except queue.Empty:
-                    continue   # nothing to do
+                    continue
 
                 if new_target == "STOP":
                     self.tts_queue.put("当前没有正在进行的导航。")
@@ -317,9 +261,7 @@ class NavController(threading.Thread):
 
             # ── PLANNING ──────────────────────────────────────────────────────
             elif self.state == "PLANNING":
-                # Guard: must have a GPS fix before calling the routing API
                 if not self._wait_for_fix():
-                    # Queue had a new command; drop back to IDLE to process it
                     self.state = "IDLE"
                     continue
 
@@ -330,7 +272,8 @@ class NavController(threading.Thread):
                     self.target_name
                 )
 
-                if not self.target_lon:
+                # 用 is None 判定, 避免经度 0.0 被误判为查询失败
+                if self.target_lon is None:
                     logger.error(f"找不到地点: '{self.target_name}'")
                     self.tts_queue.put(
                         f"抱歉，在地图上找不到「{self.target_name}」，请重新告诉我目的地。"
@@ -347,10 +290,14 @@ class NavController(threading.Thread):
                     self.state = "IDLE"
                     continue
 
-                # ── Route acquired ─────────────────────────────────────────
-                self._steps    = route.get('steps', [])
-                total_dist     = route.get('distance_meters', '未知')
-                first_instr    = (
+                # Route acquired
+                self._steps = route.get('steps', [])
+                total_dist  = route.get('distance_meters', '未知')
+
+                # 预填充已超出路线总长的播报阈值
+                self._seed_announced_thresholds(total_dist)
+
+                first_instr = (
                     self._steps[0].get('instruction', str(self._steps[0]))
                     if self._steps else "沿当前方向前行"
                 )
@@ -372,16 +319,12 @@ class NavController(threading.Thread):
 
                 lon, lat = pos
 
-                # ① Advance to next step when close enough to current exit point
                 self._try_advance_step(lon, lat)
 
-                # ② Compute trajectory-based remaining distance
                 remaining = self._remaining_distance(lon, lat)
 
-                # ③ Distance threshold announcements (each threshold fires once)
                 self._check_distance_broadcast(remaining)
 
-                # ④ Arrival detection (straight-line, last few metres)
                 straight_dist = haversine_distance(
                     lon, lat, self.target_lon, self.target_lat
                 )
@@ -395,7 +338,6 @@ class NavController(threading.Thread):
                     logger.info("状态 → IDLE")
                     continue
 
-                # ⑤ Mid-route interrupt: new destination or STOP command
                 try:
                     new_cmd = self.nav_queue.get_nowait()
                 except queue.Empty:
@@ -407,7 +349,7 @@ class NavController(threading.Thread):
                     self.state = "IDLE"
                     logger.info("用户中止导航 → IDLE")
 
-                elif new_cmd:   # new destination string
+                elif new_cmd:
                     self.tts_queue.put(
                         f"已取消前往{self.target_name}，重新规划路线中。"
                     )
@@ -416,10 +358,8 @@ class NavController(threading.Thread):
                     self.state = "PLANNING"
                     logger.info(f"目的地变更 → PLANNING: '{new_cmd}'")
 
-    # ──────────────────────────────────────────────────────────────────────────
-    # Public tool API  (called by Gemma4Agent's tool dispatcher)
-    # ──────────────────────────────────────────────────────────────────────────
 
+    # Public tool API  (called by Gemma4Agent's tool dispatcher)
     def start_navigation(self, destination: str) -> dict:
         """
         Enqueue a navigation request.  Returns immediately; the background
@@ -436,12 +376,18 @@ class NavController(threading.Thread):
     def get_nav_status(self) -> dict:
         """Return a snapshot of the current navigation state (thread-safe)."""
         pos = self.current_pos
+
+        # 先对可能被 run() 线程整体替换的引用取本地快照,
+        # 避免 len 检查与下标访问之间列表被换掉的竞态。
+        steps    = self._steps
+        step_idx = self._step_idx
+
         step_info = None
-        if self._steps and self._step_idx < len(self._steps):
+        if steps and step_idx < len(steps):
             step_info = {
-                "current": self._step_idx + 1,
-                "total":   len(self._steps),
-                "instruction": self._steps[self._step_idx].get('instruction', ''),
+                "current": step_idx + 1,
+                "total":   len(steps),
+                "instruction": steps[step_idx].get('instruction', ''),
             }
         return {
             "state":      self.state,
@@ -451,9 +397,7 @@ class NavController(threading.Thread):
             "gps_fix":    pos is not None,
         }
 
-    # ──────────────────────────────────────────────────────────────────────────
     # Lifecycle
-    # ──────────────────────────────────────────────────────────────────────────
 
     def shutdown(self) -> None:
         """Release hardware resources gracefully."""
