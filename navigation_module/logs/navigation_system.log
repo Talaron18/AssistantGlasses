@@ -265,3 +265,23 @@
 [2026-05-20 15:57:46] [INFO] [config.config_loader] - 已安全从环境变量加载高德地图 API Key
 [2026-05-20 15:57:46] [INFO] [config.config_loader] - 系统配置文件加载成功
 [2026-05-20 15:57:46] [INFO] [AssistantGlasses.navigation_module.core.nav_controller] - 导航后台线程已启动
+[2026-06-07 19:02:04] [INFO] [core.nav_controller] - 初始化核心控制器…
+[2026-06-07 19:02:04] [INFO] [config.config_loader] - 已安全从环境变量加载高德地图 API Key
+[2026-06-07 19:02:04] [INFO] [config.config_loader] - 系统配置文件加载成功
+[2026-06-07 19:02:04] [ERROR] [sensors.gnss.serial_reader] - 无法打开串口 COM6
+[2026-06-07 19:02:04] [INFO] [config.config_loader] - 已安全从环境变量加载高德地图 API Key
+[2026-06-07 19:02:04] [INFO] [config.config_loader] - 系统配置文件加载成功
+[2026-06-07 19:02:04] [INFO] [config.config_loader] - 已安全从环境变量加载高德地图 API Key
+[2026-06-07 19:02:04] [INFO] [config.config_loader] - 系统配置文件加载成功
+[2026-06-07 19:02:04] [INFO] [core.nav_controller] - 导航后台线程已启动
+[2026-06-07 19:03:03] [INFO] [algo.fusion.linear_kalman] - 卡尔曼滤波器已初始化: 投影原点 (116.169924, 39.731200)
+[2026-06-07 19:03:14] [INFO] [core.nav_controller] - 状态 → PLANNING: 目标 '良乡烈士陵园'
+[2026-06-07 19:03:14] [INFO] [core.nav_controller] - 向高德请求 '良乡烈士陵园' 的坐标和步行路线…
+[2026-06-07 19:03:15] [INFO] [core.nav_controller] - 状态 → NAVIGATING，共 3 步，总距离 583 米
+[2026-06-07 19:03:49] [INFO] [core.nav_controller] - 距离播报: 还有 500 米
+[2026-06-07 19:04:11] [INFO] [core.nav_controller] - 距离播报: 还有 400 米
+[2026-06-07 19:05:09] [INFO] [core.nav_controller] - 步骤推进 → 第 2 / 3 步
+[2026-06-07 19:05:09] [INFO] [core.nav_controller] - 距离播报: 还有 300 米
+[2026-06-07 19:06:11] [INFO] [core.nav_controller] - 距离播报: 还有 200 米
+[2026-06-07 19:06:28] [INFO] [core.nav_controller] - 距离播报: 还有 100 米
+[2026-06-07 19:06:28] [INFO] [core.nav_controller] - 距离播报: 还有 50 米

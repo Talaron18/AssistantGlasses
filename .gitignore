@@ -18,11 +18,5 @@ whisper-base/
 whisper-ov-turbo/
 whisper-ov-v2
 gemma-local/
-<<<<<<< HEAD
-voice/
-gemma4-e2b/
-=======
-
 .vscode
 *.log
->>>>>>> 0e3fe06f54367d183b4a2a13b9870a5093eedd4c

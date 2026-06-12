@@ -144,27 +144,29 @@ class NavController(threading.Thread):
             self._gcj_lat = gcj_lat
 
     def _update_gps(self) -> None:
-        """Read one NMEA sentence and update the Kalman-filtered GCJ-02 position."""
-        raw = self.reader.read_data()
-        if not raw:
-            return
-        parsed = self.parser.parse(raw)
-        if (
-            parsed
-            and parsed.get('type') == 'RMC'
-            and parsed.get('is_valid')
-        ):
-            self.kalman.update((
-                parsed['longitude'],
-                parsed['latitude'],
-                parsed['speed_kmh'],
-                parsed['true_course'],
-            ))
-            lon, lat = self.kalman.get_state()
-            gcj_lon, gcj_lat = self.transformer.wgs84_to_gcj02(lon, lat)
-            with self._pos_lock:
-                self._gcj_lon = gcj_lon
-                self._gcj_lat = gcj_lat
+        """读取 NMEA 数据，并排干缓冲区防止历史数据积压导致定位滞后"""
+        for _ in range(50):
+            raw = self.reader.read_data()
+            if not raw:
+                break  # 缓冲区已经读空，跳出循环
+                
+            parsed = self.parser.parse(raw)
+            if (
+                parsed
+                and parsed.get('type') == 'RMC'
+                and parsed.get('is_valid')
+            ):
+                self.kalman.update((
+                    parsed['longitude'],
+                    parsed['latitude'],
+                    parsed['speed_kmh'],
+                    parsed['true_course'],
+                ))
+                lon, lat = self.kalman.get_state()
+                gcj_lon, gcj_lat = self.transformer.wgs84_to_gcj02(lon, lat)
+                with self._pos_lock:
+                    self._gcj_lon = gcj_lon
+                    self._gcj_lat = gcj_lat
 
     def _wait_for_fix(self) -> bool:
         """
