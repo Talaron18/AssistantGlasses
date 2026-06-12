@@ -1,4 +1,5 @@
 import serial
+import time
 import sys
 import os
 
@@ -10,6 +11,10 @@ from config.config_loader import load_config
 
 logger = get_logger(__name__)
 
+# 断线后两次重连尝试之间的最小间隔
+RECONNECT_INTERVAL_S = 5.0
+
+
 class GNSSSerialReader(BaseSensor):
     def __init__(self):
         # 加载配置
@@ -17,18 +22,22 @@ class GNSSSerialReader(BaseSensor):
         self.port = config['hardware']['gnss']['port']
         self.baud_rate = config['hardware']['gnss']['baud_rate']
         self.timeout = config['hardware']['gnss']['timeout']
-        
+
         self.serial_conn = None
         self.is_connected = False
-        
+
         # 非阻塞读取缓冲区
-        self._buffer = "" 
-        
+        self._buffer = ""
+
+        # 断线重连节流时间戳
+        self._last_reconnect_ts = 0.0
+
         # 打开物理串口
         self._connect()
 
     def _connect(self):
         """内部方法：执行物理串口连接"""
+        self._last_reconnect_ts = time.monotonic()
         try:
             self.serial_conn = serial.Serial(
                 port=self.port,
@@ -43,16 +52,33 @@ class GNSSSerialReader(BaseSensor):
             logger.error(f"无法打开串口 {self.port}")
             logger.debug(f"错误信息: {e}")
 
+    def _try_reconnect(self):
+        """
+        现在在节流间隔内周期性尝试重连。
+        """
+        if time.monotonic() - self._last_reconnect_ts < RECONNECT_INTERVAL_S:
+            return
+        logger.info(f"尝试重新连接 GNSS 模块 {self.port} …")
+        # 先确保旧句柄被释放
+        if self.serial_conn:
+            try:
+                self.serial_conn.close()
+            except Exception:
+                pass
+            self.serial_conn = None
+        self._connect()
+
     def read_data(self) -> str:
         """
         非阻塞式按行读取串口数据
-        :return: 一行完整的 NMEA 字符串, 若无完整数据或失败返回 None
         """
         if not self.is_connected or self.serial_conn is None:
-            return None
+            self._try_reconnect()
+            if not self.is_connected:
+                return None
 
         try:
-            # 1. 检查操作系统底层缓冲区是否有数据准备好
+            # 检查操作系统底层缓冲区是否有数据准备好
             if self.serial_conn.in_waiting > 0:
                 # 读出所有可用字节，不阻塞
                 raw_data = self.serial_conn.read(self.serial_conn.in_waiting)
@@ -69,7 +95,7 @@ class GNSSSerialReader(BaseSensor):
 
             # 若没有完整的一行，瞬间返回 None
             return None
-            
+
         except serial.SerialException as e:
             logger.error(f"读取数据时串口断开: {e}")
             self.is_connected = False
@@ -80,7 +106,7 @@ class GNSSSerialReader(BaseSensor):
 
     def health_check(self) -> bool:
         """检查串口是否依然处于打开状态"""
-        return self.is_connected and self.serial_conn.is_open
+        return self.is_connected and self.serial_conn is not None and self.serial_conn.is_open
 
     def close(self):
         """安全关闭串口，释放计算机资源"""

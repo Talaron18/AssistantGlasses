@@ -4,15 +4,17 @@ import sys
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from services.base_map_api import BaseMapAPI
-from config.config_loader import load_config
+from config.config_loader import load_config, is_valid_api_key
 from utils.logger import get_logger
 
 logger = get_logger(__name__)
+
 
 class AMapProvider(BaseMapAPI):
     """
     高德地图 API 具体实现类
     """
+
     def __init__(self):
         # 加载安全配置
         config = load_config()
@@ -21,10 +23,15 @@ class AMapProvider(BaseMapAPI):
         self.walking_url = config['api']['amap']['walking_url']
         self.geo_url = config['api']['amap']['geo_url']
 
+    def _key_ok(self) -> bool:
+        if not is_valid_api_key(self.api_key):
+            logger.error("API Key 未设置或仍为占位符, 请设置 AMAP_API_KEY 环境变量")
+            return False
+        return True
+
     def get_location_name(self, lon: float, lat: float) -> str:
         """调用高德逆地理编码 API"""
-        if not self.api_key or self.api_key == "YOUR_AMAP_KEY_HERE":
-            logger.error("API Key 未设置")
+        if not self._key_ok():
             return "未知位置"
 
         params = {
@@ -37,8 +44,8 @@ class AMapProvider(BaseMapAPI):
         try:
             # 网络请求设置超时
             response = requests.get(self.geocode_url, params=params, timeout=3.0)
-            response.raise_for_status() # 检查 HTTP 状态码
-            
+            response.raise_for_status()  # 检查 HTTP 状态码
+
             data = response.json()
             if data['status'] == '1' and data['regeocode']:
                 formatted_address = data['regeocode']['formatted_address']
@@ -51,10 +58,10 @@ class AMapProvider(BaseMapAPI):
             logger.error(f"网络请求失败: {e}")
             return "网络未连接"
 
-    def get_walking_route(self, start_lon: float, start_lat: float, end_lon: float, end_lat: float) -> dict:
+    def get_walking_route(self, start_lon: float, start_lat: float,
+                          end_lon: float, end_lat: float) -> dict:
         """调用高德步行路径规划 API"""
-        if not self.api_key or self.api_key == "YOUR_AMAP_KEY_HERE":
-            logger.error("API Key 未设置")
+        if not self._key_ok():
             return None
 
         params = {
@@ -66,21 +73,17 @@ class AMapProvider(BaseMapAPI):
         try:
             response = requests.get(self.walking_url, params=params, timeout=5.0)
             response.raise_for_status()
-            
+
             data = response.json()
             if data['status'] == '1' and data['route']['paths']:
                 path = data['route']['paths'][0]
-                
+
                 # 提取精简的导航信息
                 route_info = {
-                    "distance_meters": int(path['distance']), # 总步行的米数
-                    "duration_seconds": int(path['duration']), # 预计要走多少秒
-                    "steps": [] # 存放具体文本指令
+                    "distance_meters": int(path['distance']),   # 总步行的米数
+                    "duration_seconds": int(path['duration']),  # 预计要走多少秒
+                    "steps": path['steps'],                     # 具体文本指令
                 }
-                
-                # 提取每一步自然语言指令，准备发给语音模块
-                route_info["steps"] = path['steps']
-                    
                 return route_info
             else:
                 logger.warning(f"路径规划失败: {data.get('info')}")
@@ -89,10 +92,10 @@ class AMapProvider(BaseMapAPI):
         except requests.exceptions.RequestException as e:
             logger.error(f"路径规划网络请求失败: {e}")
             return None
+
     def get_coordinate_by_name(self, address_name: str, city: str = "") -> tuple:
         """调用高德正向地理编码 API"""
-        if not self.api_key or self.api_key == "YOUR_AMAP_KEY_HERE":
-            logger.error("API Key 未设置")
+        if not self._key_ok():
             return None, None
 
         params = {
@@ -105,7 +108,7 @@ class AMapProvider(BaseMapAPI):
         try:
             response = requests.get(self.geo_url, params=params, timeout=3.0)
             response.raise_for_status()
-            
+
             data = response.json()
             if data['status'] == '1' and data.get('geocodes'):
                 # 高德返回的 location 为一个字符串
