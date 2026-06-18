@@ -20,11 +20,13 @@ from utils.logger import get_logger
 logger = get_logger(__name__)
 
 
-STEP_ADVANCE_M: float = 15.0
+STEP_ADVANCE_M: float = 9.0
 ARRIVAL_M: float = 8.0
 LOOP_INTERVAL: float = 0.05
 GPS_POLL_S: float = 0.5
-MAX_USABLE_HDOP: float = 8.0
+MAX_USABLE_HDOP: float = 4.5
+DEVIATION_M: float = 50.0
+DEVIATION_CONFIRM_COUNT: int = 3
 
 
 class NavController(threading.Thread):
@@ -60,8 +62,8 @@ class NavController(threading.Thread):
         self._gcj_lat:  float | None   = None
 
         # ── Kalman filter timing & quality ─────────────────────────────────
-        # 记录上一次 KF 更新的时间戳, 用于 predict(dt)
-        self._last_kf_ts: float | None = None
+        # 记录上一次 predict 调用时间戳，用于主循环 20Hz predict
+        self._last_predict_ts: float | None = None
         # 最近一帧 GGA 的 定位质量, 默认乐观值
         self._last_hdop: float = 1.0
 
@@ -72,9 +74,10 @@ class NavController(threading.Thread):
         self.target_lat:  float | None = None
 
         # ── route tracking───────────────────────
-        self._steps:     list[dict] = []
-        self._step_idx:  int        = 0
-        self._announced: set[int]   = set()
+        self._steps:           list[dict] = []
+        self._step_idx:        int        = 0
+        self._announced:       set[int]   = set()
+        self._deviation_count: int        = 0
         
     # GPS helpers
     @property
@@ -94,9 +97,8 @@ class NavController(threading.Thread):
             self._gcj_lat = gcj_lat
 
     def _update_gps(self) -> None:
-        """读取 NMEA 数据，并排干缓冲区防止历史数据积压导致定位滞后"""
-        # 一次最多连读 50 行，防止死循环阻塞，同时确保读到最新的一手坐标
-        for _ in range(50):
+        """读取 NMEA 数据，每次最多处理 10 行，防止单帧阻塞主循环"""
+        for _ in range(10):
             raw = self.reader.read_data()
             if not raw:
                 break  # 缓冲区已经读空，跳出循环
@@ -113,16 +115,9 @@ class NavController(threading.Thread):
 
             # RMC: 主定位帧
             if parsed.get('type') == 'RMC' and parsed.get('is_valid'):
-                # HDOP 过大说明几何条件极差, 丢弃该帧
                 if self._last_hdop > MAX_USABLE_HDOP:
                     logger.debug(f"HDOP={self._last_hdop:.1f} 过大, 丢弃本帧定位")
                     continue
-
-                # 每次 update 前必须 predict(dt), 否则滤波器僵死
-                now = time.monotonic()
-                dt = (now - self._last_kf_ts) if self._last_kf_ts is not None else 0.0
-                self._last_kf_ts = now
-                self.kalman.predict(dt)
 
                 self.kalman.update((
                     parsed['longitude'],
@@ -186,19 +181,23 @@ class NavController(threading.Thread):
         return dist_to_exit + tail_dist
 
     def _try_advance_step(self, lon: float, lat: float) -> None:
-        if not self._steps or self._step_idx >= len(self._steps):
+        advanced = False
+        while self._steps and self._step_idx < len(self._steps):
+            exit_pt = self._get_step_exit(self._steps[self._step_idx])
+            if exit_pt is None:
+                break
+            if haversine_distance(lon, lat, *exit_pt) > STEP_ADVANCE_M:
+                break
+            self._step_idx += 1
+            advanced = True
+
+        if not advanced:
             return
 
-        exit_pt = self._get_step_exit(self._steps[self._step_idx])
-        if exit_pt is None:
-            return
+        self._deviation_count = 0  # 步骤推进后重置偏离计数
 
-        if haversine_distance(lon, lat, *exit_pt) > STEP_ADVANCE_M:
-            return
-
-        self._step_idx += 1
         if self._step_idx >= len(self._steps):
-            return   # last step done; arrival check handles the rest
+            return  # last step done; arrival check handles the rest
 
         next_step   = self._steps[self._step_idx]
         instruction = next_step.get('instruction', str(next_step))
@@ -206,7 +205,6 @@ class NavController(threading.Thread):
             float(s.get('distance', 0)) for s in self._steps[self._step_idx:]
         )
         logger.info(f"步骤推进 → 第 {self._step_idx + 1} / {len(self._steps)} 步")
-        # 取整
         self.tts_queue.put(f"前方约 {int(round(remaining))} 米，{instruction}")
 
     def _check_distance_broadcast(self, remaining: float) -> None:
@@ -218,9 +216,27 @@ class NavController(threading.Thread):
 
     def _reset_route(self) -> None:
         """Clear all per-route state. Call before starting every new route."""
-        self._steps     = []
-        self._step_idx  = 0
-        self._announced = set()
+        self._steps           = []
+        self._step_idx        = 0
+        self._announced       = set()
+        self._deviation_count = 0
+
+    def _is_off_route(self, lon: float, lat: float) -> bool:
+        """
+        当用户距当前步骤终点的距离超过该步骤长度加 DEVIATION_M 时判定为偏离路线。
+        原理：正常行走时 dist(用户, 步骤终点) ≤ 步骤长度；
+              若超出步骤长度+裕量，说明用户向错误方向偏移。
+        """
+        if not self._steps or self._step_idx >= len(self._steps):
+            return False
+        exit_pt = self._get_step_exit(self._steps[self._step_idx])
+        if exit_pt is None:
+            return False
+        try:
+            step_dist = float(self._steps[self._step_idx].get('distance', 0)) or 100.0
+        except (TypeError, ValueError):
+            step_dist = 100.0
+        return haversine_distance(lon, lat, *exit_pt) > step_dist + DEVIATION_M
 
     def _seed_announced_thresholds(self, total_dist) -> None:
         """
@@ -238,6 +254,13 @@ class NavController(threading.Thread):
 
         while True:
             time.sleep(LOOP_INTERVAL)
+
+            # predict 在主循环 20Hz 频率下运行，与 GPS update 解耦
+            now = time.monotonic()
+            dt = (now - self._last_predict_ts) if self._last_predict_ts is not None else LOOP_INTERVAL
+            self._last_predict_ts = now
+            self.kalman.predict(dt)
+
             self._update_gps()
 
             # ── IDLE ──────────────────────────────────────────────────────────
@@ -319,6 +342,18 @@ class NavController(threading.Thread):
 
                 lon, lat = pos
 
+                # ── 偏离路线检测 ─────────────────────────────────────────
+                if self._is_off_route(lon, lat):
+                    self._deviation_count += 1
+                    if self._deviation_count >= DEVIATION_CONFIRM_COUNT:
+                        logger.warning("连续偏离路线，触发重规划")
+                        self.tts_queue.put("您似乎偏离了路线，正在重新规划…")
+                        self._reset_route()
+                        self.state = "PLANNING"
+                        continue
+                else:
+                    self._deviation_count = 0
+
                 self._try_advance_step(lon, lat)
 
                 remaining = self._remaining_distance(lon, lat)
@@ -328,7 +363,8 @@ class NavController(threading.Thread):
                 straight_dist = haversine_distance(
                     lon, lat, self.target_lon, self.target_lat
                 )
-                if straight_dist <= ARRIVAL_M:
+                arrival_threshold = max(ARRIVAL_M, self._last_hdop * 3.0)
+                if straight_dist <= arrival_threshold:
                     logger.info(f"已到达目的地: '{self.target_name}'")
                     self.tts_queue.put(
                         f"您已到达{self.target_name}附近，本次导航结束，祝您顺利！"
