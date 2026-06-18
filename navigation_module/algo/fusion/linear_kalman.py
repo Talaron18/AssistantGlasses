@@ -30,8 +30,11 @@ class LinearKalmanFilter(BaseFilter):
         self.P = np.eye(4) * 1.0
         self.F = np.eye(4)
 
-        # 观测矩阵 H: 同时观测位置(x,y)和速度(v_x, v_y)
-        self.H = np.eye(4)
+        # 观测矩阵: 位置 (2×4) 和速度 (2×4) 分离，避免将速度视为与位置等精度的直接观测
+        self._H_POS = np.array([[1, 0, 0, 0],
+                                 [0, 1, 0, 0]], dtype=float)
+        self._H_VEL = np.array([[0, 0, 1, 0],
+                                 [0, 0, 0, 1]], dtype=float)
 
         # 过程噪声协方差矩阵 Q
         self.Q = np.eye(4) * 1e-3
@@ -103,7 +106,9 @@ class LinearKalmanFilter(BaseFilter):
 
     def update(self, measurement: tuple):
         """
-        融入观测值纠偏
+        两阶段观测融合:
+          Pass 1 — 位置观测 (_H_POS 2×4), 始终执行;
+          Pass 2 — 速度观测 (_H_VEL 2×4), 仅在有效行走速度时执行。
         :param measurement: (经度, 纬度, 速度km/h, 航向角)
         """
         if len(measurement) != 4:
@@ -116,33 +121,31 @@ class LinearKalmanFilter(BaseFilter):
             self.initialize(lon, lat)
             return
 
-        # 位置转换 (米)
         x, y = self._latlon_to_xy(lon, lat)
-
-        # 速度向量分解 (米/秒)
         speed_ms = speed_kmh / 3.6
         rad_course = math.radians(course)
-        v_x = speed_ms * math.sin(rad_course)  # 东向速度
-        v_y = speed_ms * math.cos(rad_course)  # 北向速度
+        v_x = speed_ms * math.sin(rad_course)
+        v_y = speed_ms * math.cos(rad_course)
 
-        # 构建观测向量 Z
-        Z = np.array([[x], [y], [v_x], [v_y]])
-
-        # 动态构建观测噪声 R
         pos_var = self.base_pos_var * max(1.0, self._hdop) ** 2
-        if speed_kmh < self.LOW_SPEED_KMH:
-            vel_var = self.LOW_SPEED_VEL_VAR
-        else:
-            vel_var = self.base_vel_var
-        R = np.diag([pos_var, pos_var, vel_var, vel_var])
+        I4 = np.eye(4)
 
-        # 卡尔曼增益与状态更新
-        S = np.dot(np.dot(self.H, self.P), self.H.T) + R
-        K = np.dot(np.dot(self.P, self.H.T), np.linalg.inv(S))
-        Y = Z - np.dot(self.H, self.X)
-        self.X = self.X + np.dot(K, Y)
-        I = np.eye(self.P.shape[0])
-        self.P = np.dot((I - np.dot(K, self.H)), self.P)
+        # ── Pass 1: 位置观测 ──────────────────────────────────────────
+        Z_p = np.array([[x], [y]])
+        R_p = np.diag([pos_var, pos_var])
+        S_p = self._H_POS @ self.P @ self._H_POS.T + R_p
+        K_p = self.P @ self._H_POS.T @ np.linalg.inv(S_p)
+        self.X = self.X + K_p @ (Z_p - self._H_POS @ self.X)
+        self.P = (I4 - K_p @ self._H_POS) @ self.P
+
+        # ── Pass 2: 速度观测 (仅在有效行走速度时融合) ─────────────────
+        if speed_kmh >= self.LOW_SPEED_KMH:
+            Z_v = np.array([[v_x], [v_y]])
+            R_v = np.diag([self.base_vel_var, self.base_vel_var])
+            S_v = self._H_VEL @ self.P @ self._H_VEL.T + R_v
+            K_v = self.P @ self._H_VEL.T @ np.linalg.inv(S_v)
+            self.X = self.X + K_v @ (Z_v - self._H_VEL @ self.X)
+            self.P = (I4 - K_v @ self._H_VEL) @ self.P
 
     def get_state(self) -> tuple:
         """
