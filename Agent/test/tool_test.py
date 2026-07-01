@@ -5,15 +5,6 @@ from datetime import datetime
 
 
 def quicktest(mode="ON"):
-    """
-    Camera tool for AssistantGlasses.
-
-    Returns:
-        {
-            "status": "success",
-            "image_path": "...jpg"
-        }
-    """
 
     if mode != "ON":
         return {

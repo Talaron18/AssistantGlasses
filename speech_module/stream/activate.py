@@ -77,10 +77,6 @@ def loop2(cobra,streaming,length,audio,rate):
     text=voice_to_text(audio_int16,rate)
     return text
 
-""" 
-    loop3: inner loop for realtime speech2text + voice termination
-    BE AWARE!!! This loop may be filled with bugs as it has NOT BEEN TESTED
-"""
 
 def loop3(st,ss,cobra,audio,streaming,length,rate,q,keys):
     audio_data=streaming.read(audio.frame_length,exception_on_overflow=False)
@@ -121,6 +117,3 @@ def loop3(st,ss,cobra,audio,streaming,length,rate,q,keys):
         except:
             pass
     return flush
-"""
-如果不是“结束”就只存到input的queue
-"""

@@ -12,9 +12,6 @@ logger = get_logger("Main")
 
 
 def main(tts_queue: queue.Queue, nav_queue: queue.Queue) -> None:
-    """
-    启动导航后台线程。
-    """
     logger.info("导航模块启动中...")
 
     controller = NavController(nav_queue=nav_queue, tts_queue=tts_queue)
@@ -33,7 +30,6 @@ def main(tts_queue: queue.Queue, nav_queue: queue.Queue) -> None:
 
 
 def _debug_tts_consumer(tts_queue: queue.Queue) -> None:
-    """独立运行时的简易 TTS 消费者: 把语音内容打印到终端, 防止队列无限堆积。"""
     while True:
         msg = tts_queue.get()
         logger.info(f"[TTS 播报] {msg}")

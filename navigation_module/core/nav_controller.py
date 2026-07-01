@@ -30,9 +30,6 @@ DEVIATION_CONFIRM_COUNT: int = 3
 
 
 class NavController(threading.Thread):
-    """
-    盲人智能拐杖导航系统 (多线程状态机)
-    """
 
     def __init__(self, nav_queue: queue.Queue, tts_queue: queue.Queue) -> None:
         super().__init__(daemon=True)
@@ -72,22 +69,17 @@ class NavController(threading.Thread):
         
     @property
     def current_pos(self) -> tuple[float, float] | None:
-        """Return (gcj_lon, gcj_lat) or None if no fix yet."""
         with self._pos_lock:
             if self._gcj_lon is None:
                 return None
             return self._gcj_lon, self._gcj_lat
 
     def force_set_position(self, gcj_lon: float, gcj_lat: float) -> None:
-        """
-        强制设置当前位置，绕过卡尔曼滤波器。
-        """
         with self._pos_lock:
             self._gcj_lon = gcj_lon
             self._gcj_lat = gcj_lat
 
     def _update_gps(self) -> None:
-        """读取 NMEA 数据，每次最多处理 10 行，防止单帧阻塞主循环"""
         for _ in range(10):
             raw = self.reader.read_data()
             if not raw:
@@ -120,9 +112,6 @@ class NavController(threading.Thread):
                     self._gcj_lat = gcj_lat
 
     def _wait_for_fix(self) -> bool:
-        """
-        Block (with GPS polling) until a valid position is available.
-        """
         if self.current_pos is not None:
             return True
         logger.warning("等待 GPS 定位…")
@@ -202,18 +191,12 @@ class NavController(threading.Thread):
                 self.tts_queue.put(f"距目的地还有 {threshold} 米。")
 
     def _reset_route(self) -> None:
-        """Clear all per-route state. Call before starting every new route."""
         self._steps           = []
         self._step_idx        = 0
         self._announced       = set()
         self._deviation_count = 0
 
     def _is_off_route(self, lon: float, lat: float) -> bool:
-        """
-        当用户距当前步骤终点的距离超过该步骤长度加 DEVIATION_M 时判定为偏离路线。
-        原理：正常行走时 dist(用户, 步骤终点) ≤ 步骤长度；
-              若超出步骤长度+裕量，说明用户向错误方向偏移。
-        """
         if not self._steps or self._step_idx >= len(self._steps):
             return False
         exit_pt = self._get_step_exit(self._steps[self._step_idx])
@@ -226,9 +209,6 @@ class NavController(threading.Thread):
         return haversine_distance(lon, lat, *exit_pt) > step_dist + DEVIATION_M
 
     def _seed_announced_thresholds(self, total_dist) -> None:
-        """
-        规划成功后, 把所有 ≥ 路线总长的阈值预先标记为"已播报"。
-        """
         try:
             total = float(total_dist)
         except (TypeError, ValueError):
@@ -373,20 +353,14 @@ class NavController(threading.Thread):
 
 
     def start_navigation(self, destination: str) -> dict:
-        """
-        Enqueue a navigation request.  Returns immediately; the background
-        thread handles planning and route acquisition asynchronously.
-        """
         self.nav_queue.put(destination)
         return {"success": True, "status": f"正在规划前往「{destination}」的路线。"}
 
     def stop_navigation(self) -> dict:
-        """Cancel the current navigation."""
         self.nav_queue.put("STOP")
         return {"success": True, "status": "导航已取消。"}
 
     def get_nav_status(self) -> dict:
-        """Return a snapshot of the current navigation state (thread-safe)."""
         pos = self.current_pos
 
         steps    = self._steps
@@ -409,7 +383,6 @@ class NavController(threading.Thread):
 
 
     def shutdown(self) -> None:
-        """Release hardware resources gracefully."""
         if self.reader:
             self.reader.close()
         logger.info("控制器已安全释放资源")

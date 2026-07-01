@@ -8,9 +8,6 @@ import AssistantGlasses.Agent.code.config as config
 from AssistantGlasses.Agent.code.utils import to_base64,img_to_base64
 from AssistantGlasses.Agent.test.tool_test import quicktest
 
-"""
-    glm-4.6v-flash using zai's python-sdk
-"""
 
 class ZaiAgent():
     def __init__(self,role="default"):
@@ -114,9 +111,6 @@ class ZaiAgent():
             self.conversation.append({"role":"assistant","content":memory})
         return self.conversation
 
-"""
-    glm-4.6v deployed on siliconflow, using openai's python-sdk
-"""
 
 class SiliconflowAgent():
     def __init__(self,role="default"):
@@ -237,7 +231,3 @@ class SiliconflowAgent():
             self.conversation.append({"role":"assistant","content":memory})
         return self.conversation
 
-"""
-    the wake-up words shouldn't be sent to agent
-    make sure this problem is solved
-"""

@@ -1,7 +1,3 @@
-"""
-     A polished version of request functions modified with Gemini,
-     removing redundant logic and adding wake word stripping
-"""
 
 import os
 import re
@@ -21,9 +17,6 @@ from openai import OpenAI
 from AssistantGlasses.voice_module.read import TTS
 from AssistantGlasses.voice_module.edge_tts import stream_audio
 
-"""
-    base class handling both zai and siliconflow models
-"""
 class BaseAgent:
     def __init__(self, destination:queue.Queue, role="default", speech: queue.Queue | None= None):
         self.role_setting = config.SYSTEM_SETTING[role]
@@ -114,7 +107,6 @@ class BaseAgent:
                 self.conversation.append({"role": "user", "content": [{"type": "image_url", "image_url": {"url": f"data:image/jpg;base64,{prepared}"}}]})
 
     def process_stream_and_tools(self, response):
-        """Shared logic to stream responses and execute tool calls."""
         memory = ""
         tool_id = None
         func_name = ""
@@ -192,7 +184,6 @@ class BaseAgent:
 
 
 class ZaiAgent(BaseAgent):
-    """glm-4.6v-flash using zai's python-sdk"""
     def __init__(self, role="default"):
         super().__init__(role)
         api_key = os.environ.get("ZAI_API_KEY")
@@ -213,7 +204,6 @@ class ZaiAgent(BaseAgent):
 
 
 class SiliconflowAgent(BaseAgent):
-    """glm-4.6v deployed on siliconflow, using openai's python-sdk"""
     def __init__(self, destination:queue.Queue, role="default", speech: queue.Queue | None= None):
         super().__init__(role=role,destination=destination,speech=speech)
         api_key = os.environ.get("SILICON_FLOW")

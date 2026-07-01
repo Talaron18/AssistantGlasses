@@ -1,16 +1,3 @@
-"""
-kokoro.py — Cached Kokoro TTS with a pipelined synthesize/speak interface.
-
-Key changes vs original:
-  - Models and G2P processors are loaded ONCE at first use, then reused.
-    The per-call Kokoro() constructor was the dominant latency cost; this
-    eliminates it entirely on subsequent calls.
-  - synthesize(text, lan) → (samples, rate)  — generates audio WITHOUT playing.
-    chat.py uses this to pipeline generation and playback in separate threads
-    so chunk N+1 is synthesised while chunk N is playing.
-  - speak(text, lan)  — backward-compatible; calls synthesize then plays.
-  - English model constructor bug fixed (voice_path kept, vocab_config optional).
-"""
 
 from __future__ import annotations
 
@@ -31,7 +18,6 @@ _g2p:    dict[str, object]       = {}
 
 
 def _ensure_zh() -> tuple[Kokoro, zh.ZHG2P]:
-    """Load Chinese model + G2P exactly once."""
     with _lock:
         if "zh" not in _kokoro:
             print("[TTS] Loading Chinese model…", end=" ", flush=True)
@@ -46,7 +32,6 @@ def _ensure_zh() -> tuple[Kokoro, zh.ZHG2P]:
 
 
 def _ensure_en() -> tuple[Kokoro, en.G2P]:
-    """Load English model + G2P exactly once."""
     with _lock:
         if "en" not in _kokoro:
             print("[TTS] Loading English model…", end=" ", flush=True)
@@ -63,16 +48,6 @@ def _ensure_en() -> tuple[Kokoro, en.G2P]:
 
 
 def synthesize(text: str, lan: str = "default") -> tuple:
-    """
-    Convert *text* to raw audio samples WITHOUT playing.
-
-    Returns
-    -------
-    (samples : np.ndarray, sample_rate : int)
-
-    Designed to be called from a synthesis thread so that audio generation
-    overlaps with playback of the previous chunk.
-    """
     if not text or not text.strip():
         raise ValueError("synthesize() received empty text.")
 
@@ -90,7 +65,6 @@ def synthesize(text: str, lan: str = "default") -> tuple:
 
 
 def speak(text: str, lan: str = "default") -> None:
-    """Synthesise *text* and play it immediately (blocking).  Backward-compatible."""
     samples, sample_rate = synthesize(text, lan)
     sd.play(samples, sample_rate)
     sd.wait()

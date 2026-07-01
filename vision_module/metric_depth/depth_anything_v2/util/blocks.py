@@ -27,15 +27,8 @@ def _make_scratch(in_shape, out_shape, groups=1, expand=False):
 
 
 class ResidualConvUnit(nn.Module):
-    """Residual convolution module.
-    """
 
     def __init__(self, features, activation, bn):
-        """Init.
-
-        Args:
-            features (int): number of features
-        """
         super().__init__()
 
         self.bn = bn
@@ -55,14 +48,6 @@ class ResidualConvUnit(nn.Module):
         self.skip_add = nn.quantized.FloatFunctional()
 
     def forward(self, x):
-        """Forward pass.
-
-        Args:
-            x (tensor): input
-
-        Returns:
-            tensor: output
-        """
         
         out = self.activation(x)
         out = self.conv1(out)
@@ -81,8 +66,6 @@ class ResidualConvUnit(nn.Module):
 
 
 class FeatureFusionBlock(nn.Module):
-    """Feature fusion block.
-    """
 
     def __init__(
         self, 
@@ -94,11 +77,6 @@ class FeatureFusionBlock(nn.Module):
         align_corners=True,
         size=None
     ):
-        """Init.
-        
-        Args:
-            features (int): number of features
-        """
         super(FeatureFusionBlock, self).__init__()
 
         self.deconv = deconv
@@ -121,11 +99,6 @@ class FeatureFusionBlock(nn.Module):
         self.size=size
 
     def forward(self, *xs, size=None):
-        """Forward pass.
-
-        Returns:
-            tensor: output
-        """
         output = xs[0]
 
         if len(xs) == 2:

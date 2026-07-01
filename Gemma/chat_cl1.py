@@ -1,37 +1,3 @@
-"""
-Agent classes using llama.cpp's OpenAI-compatible API.
-Supports streaming, vision, audio input (via Whisper), and tool calls.
-
-Changes vs original
-───────────────────
-Speed
-  • Pipelined TTS: a synthesis thread and a playback thread run concurrently,
-    so chunk N+1 is generated while chunk N is playing (~30-50 % faster TTS).
-  • kokoro models are now cached at module level (see kokoro.py), eliminating
-    per-utterance model reload latency.
-  • TTS flush thresholds tuned for both English (word count) and Chinese
-    (character count), so the first spoken word arrives faster.
-
-Audio input
-  • Gemma4Agent.transcribe_audio(audio) — sends raw audio (numpy or WAV bytes)
-    to llama.cpp's /v1/audio/transcriptions Whisper endpoint.
-  • chat_stream(audio_data=...) — pass recorded audio directly; the agent
-    transcribes first, then continues the normal pipeline.
-
-Reliability
-  • interrupt_tts() — drains both TTS queues and stops sounddevice playback
-    instantly when the user starts speaking again.
-  • _safe_parse_args() — repairs common JSON issues in tool arguments
-    (trailing commas, bare identifiers, extra whitespace).
-  • _detect_text_tool_call() — catches models that emit tool invocations as
-    raw JSON text instead of using the structured tool_calls mechanism.
-  • Append _TOOL_INSTRUCTIONS to every system message so the model knows
-    exactly when/how to call tools silently.
-
-Prerequisites:
-    pip install openai opencv-python sounddevice numpy python-dotenv
-    llama-server --port 8090 --model gemma4.gguf ...
-"""
 
 from __future__ import annotations
 
@@ -85,16 +51,6 @@ _LANG_SEG_RE = re.compile(
 
 
 def _iter_lang_segments(text: str):
-    """
-    Yield ``(segment, lang)`` pairs from mixed zh/en text, merging adjacent
-    same-language runs.  Numbers and lone punctuation adopt the language of
-    the surrounding context.
-
-    Example
-    -------
-    "我有2个朋友，Gemini 和ChatGPT"
-    → [("我有2个朋友，", "zh"), ("Gemini", "en"), ("和", "zh"), ("ChatGPT", "en")]
-    """
     buf: str = ""
     cur_lang: str | None = None
 
@@ -123,10 +79,6 @@ def _iter_lang_segments(text: str):
 
 
 def _safe_parse_args(raw: str) -> dict:
-    """
-    Parse tool-call arguments with multiple fallback strategies.
-    Handles: empty string, trailing commas, single-quoted keys, stray text.
-    """
     if not raw or not raw.strip():
         return {}
 
@@ -153,17 +105,6 @@ def _safe_parse_args(raw: str) -> dict:
 
 
 class BaseAgent:
-    """
-    Base agent wired to llama.cpp's OpenAI-compatible chat API.
-
-    TTS pipeline
-    ─────────────
-    tts_queue  ──►  _tts_worker (synthesis)  ──►  _play_queue  ──►  _play_worker
-    Text chunks arrive in tts_queue.  The synthesis thread converts text → audio
-    and pushes (samples, rate) tuples to _play_queue.  The playback thread drains
-    _play_queue with sd.play/wait.  Because both threads run concurrently, chunk
-    N+1 is being synthesised while chunk N is audible.
-    """
 
     PUNCTUATION = frozenset(".!?\n。！？……")
     LOCATION_RE = re.compile(r"\[&location/(.*?)&\]")
@@ -246,17 +187,12 @@ class BaseAgent:
         })
 
     def stop(self) -> None:
-        """Gracefully shut down the TTS pipeline."""
         self.interrupt_tts()
         self.tts_queue.put(None)
         self._tts_thread.join(timeout=3.0)
         self._play_thread.join(timeout=3.0)
 
     def interrupt_tts(self) -> None:
-        """
-        Immediately silence TTS: drain both queues and stop sounddevice.
-        Call this when the user begins speaking to avoid talking over them.
-        """
         for q in (self.tts_queue, self._play_queue):
             while True:
                 try:
@@ -270,26 +206,9 @@ class BaseAgent:
 
 
     def detect_lang(self, text: str) -> str:
-        """Return 'zh' if *any* Chinese characters are present, else 'en'.
-
-        A single Chinese character means the chunk is Chinese-primary, so the
-        zh Kokoro voice is selected.  That voice handles embedded English words
-        (brand names, acronyms) correctly via its built-in G2P lexicon.
-        """
         return "zh" if _ZH_RE.search(text) else "en"
 
     def _tts_worker(self) -> None:
-        """
-        Stage-1 TTS pipeline: text → audio samples.
-
-        For **mixed** zh/en chunks (e.g. "我有2个朋友，Gemini 和ChatGPT") the
-        text is split into language-homogeneous segments by ``_iter_lang_segments``,
-        each segment is synthesised with the matching voice, and the resulting
-        numpy arrays are concatenated before being pushed to the play queue.
-
-        Everything happens inside this background thread, so the playback
-        latency perceived by the user is identical to the mono-lingual path.
-        """
         while True:
             text = self.tts_queue.get()
             if text is None:
@@ -357,15 +276,6 @@ class BaseAgent:
 
     @staticmethod
     def _audio_message(b64_wav: str, prompt: str) -> dict:
-        """
-        Build an OpenAI-compatible user message with native audio input.
-        Per Google's Gemma4 model card, text must appear BEFORE audio in the
-        content array for optimal performance.
-
-        Requires llama-server launched with:
-            --mmproj mmproj-BF16.gguf --jinja
-        and a build that includes PR #21421 (Gemma4 audio conformer encoder).
-        """
         return {
             "role": "user",
             "content": [
@@ -393,11 +303,6 @@ class BaseAgent:
 
 
     def _detect_text_tool_call(self, text: str) -> dict | None:
-        """
-        Some model checkpoints emit tool invocations as raw JSON text rather
-        than using the structured tool_calls field.  Detect the pattern
-        {"name": "capture_photo", ...} and convert it to a usable call dict.
-        """
         stripped = text.strip()
         if not stripped.startswith("{"):
             return None
@@ -555,12 +460,6 @@ class Gemma4Agent(BaseAgent):
 
 
     def _register_nav_tools(self) -> None:
-        """
-        Append navigation tools to self.tools.
-        Called once from __init__ when a NavController is provided.
-        The standard tool dispatcher (process_stream_and_tools → getattr(self, name))
-        will route calls to the three methods below automatically.
-        """
         self.tools.extend([
             {
                 "type": "function",
@@ -625,19 +524,16 @@ class Gemma4Agent(BaseAgent):
         ])
 
     def start_navigation(self, destination: str) -> dict:
-        """Tool handler: start walking navigation to *destination*."""
         if self.nav_controller is None:
             return {"success": False, "error": "Navigation module not connected."}
         return self.nav_controller.start_navigation(destination)
 
     def stop_navigation(self) -> dict:
-        """Tool handler: cancel the current navigation."""
         if self.nav_controller is None:
             return {"success": False, "error": "Navigation module not connected."}
         return self.nav_controller.stop_navigation()
 
     def get_nav_status(self) -> dict:
-        """Tool handler: return a snapshot of the navigation state."""
         if self.nav_controller is None:
             return {"success": False, "error": "Navigation module not connected."}
         return self.nav_controller.get_nav_status()
@@ -645,7 +541,6 @@ class Gemma4Agent(BaseAgent):
 
     @staticmethod
     def _ndarray_to_wav(audio: np.ndarray, sample_rate: int = 16_000) -> bytes:
-        """Convert float32 mono numpy array to 16-bit PCM WAV bytes."""
         pcm = (audio.flatten() * 32_767.0).clip(-32_768, 32_767).astype(np.int16)
         buf = io.BytesIO()
         with wave.open(buf, "wb") as wf:
@@ -660,18 +555,6 @@ class Gemma4Agent(BaseAgent):
         audio: "np.ndarray | bytes",
         sample_rate: int = 16_000,
     ) -> str:
-        """
-        Transcribe audio via llama.cpp's /v1/audio/transcriptions endpoint.
-
-        Parameters
-        ----------
-        audio       : float32 mono numpy array  OR  pre-encoded WAV bytes.
-        sample_rate : only used when audio is np.ndarray.
-
-        Returns
-        -------
-        Transcribed text (stripped).  Empty string on failure.
-        """
         try:
             wav_bytes = (
                 self._ndarray_to_wav(audio, sample_rate)
@@ -700,19 +583,6 @@ class Gemma4Agent(BaseAgent):
         audio_data: "np.ndarray | bytes | None" = None,
         native_audio: bool = False,
     ) -> list:
-        """
-        Parameters
-        ----------
-        input_flow   : str | image_path | cv2_frame
-        img_path     : True when input_flow is a file path to an image
-        tool         : enable function/tool calling
-        audio_data   : float32 numpy array or WAV bytes
-        native_audio : True  → send audio directly to Gemma4's audio encoder
-                               (requires --mmproj and llama.cpp build ≥ b8773,
-                               currently experimental — see llama.cpp issue #23688)
-                       False → transcribe via Whisper first, send resulting text
-                               (default; reliable and faster for pure STT)
-        """
         if audio_data is not None:
             if native_audio:
                 wav_bytes = (

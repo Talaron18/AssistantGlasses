@@ -1,33 +1,3 @@
-"""
-nav_test.py — 导航实地测试一体化脚本 (终端仪表盘 + 网页地图监控)
-
-一次启动同时获得:
-─────────────────
-【终端】
-  · 输入目的地发起导航; 行进中输入新地名改道, stop 取消, q 退出
-  · 底部状态行 0.5s 刷新: 状态/位置/步骤/剩余/直线/GPS
-  · TTS 播报内容以时间戳日志滚动打印
-
-【网页 http://<本机IP>:8800 】(手机连同一热点即可边走边看)
-  · 高德底图 (GCJ-02, 与系统坐标系一致, 贴路程度即真实贴路程度)
-  · 红色轨迹 = GPS 原始定位 (进滤波器前截获)
-  · 蓝色轨迹 = 卡尔曼滤波输出 (导航实际使用)
-  · 漂移监控: 原始↔滤波瞬时偏差 (米), >8m 黄 / >20m 红
-  · 串口堆积监控: in_waiting / 内部缓冲 / RMC帧率 / 定位时延
-      in_waiting 持续上涨 或 定位时延越来越大 → 消费跟不上, 有堆积
-
-【复盘文件】
-  · track_YYYYmmdd_HHMMSS.csv: 每秒一条 (时间/经纬度/状态/步骤/距离),
-    走完导入 Excel 或高德坐标拾取器复盘
-
-用法
-────
-    export AMAP_API_KEY="你的真实密钥"
-    python nav_test.py
-
-注: 高德瓦片为测试期临时使用; 脚本中读取 _buffer / _remaining_distance
-等私有成员属于调试专用写法, 请勿带入生产代码。
-"""
 
 from __future__ import annotations
 
@@ -68,7 +38,6 @@ controller: NavController | None = None
 
 
 def log_line(msg: str) -> None:
-    """滚动日志行 (先清掉仪表盘行, 防止互相覆盖)。"""
     ts = datetime.now().strftime("%H:%M:%S")
     with _print_lock:
         sys.stdout.write(CLEAR_LINE)
@@ -171,7 +140,6 @@ def collector(ctrl: NavController, stop_evt: threading.Event,
 
 
 def _planned_route(ctrl: NavController) -> list:
-    """从高德 steps 的 polyline 字段拼出整条规划路线 (GCJ-02, 可直接上图)。"""
     pts = []
     for step in ctrl._steps:
         polyline = step.get("polyline", "")

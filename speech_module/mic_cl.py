@@ -1,29 +1,3 @@
-"""
-mic.py — Push-to-talk + text console for Gemma4Agent.
-
-AUDIO mode  Hold SPACE ─► record ─► release ─► transcribe ─► send to Gemma4
-TEXT mode   Type + Enter to send
-
-Global commands (work in either mode, type and press Enter):
-  /text  or /t    Switch to text input mode
-  /audio or /a    Switch to push-to-talk mode
-  /quit  or /q    Exit
-
-Interruption
-  Pressing SPACE while in audio mode (once the agent has finished) clears any
-  pending TTS and starts recording immediately.
-
-STT backend (set USE_LLAMA_STT below)
-  False (default) — local faster-whisper; fastest, no extra server required
-  True            — llama.cpp /v1/audio/transcriptions; requires a Whisper
-                    model to be served alongside Gemma4
-
-Prerequisites:
-    pip install sounddevice numpy pynput python-dotenv
-    pip install faster-whisper          # if USE_LLAMA_STT = False
-    # Linux: user must be in the 'input' group, or run with sudo, for pynput
-    # macOS: grant Accessibility permission to the terminal
-"""
 
 from __future__ import annotations
 
@@ -52,7 +26,6 @@ STT_BACKEND = "whisper_local"
 
 
 def _ndarray_to_wav(audio: np.ndarray, sample_rate: int = SAMPLE_RATE) -> bytes:
-    """Convert float32 mono numpy array to 16-bit PCM WAV bytes."""
     pcm = (audio.flatten() * 32_767.0).clip(-32_768, 32_767).astype(np.int16)
     buf = io.BytesIO()
     with wave.open(buf, "wb") as wf:
@@ -64,7 +37,6 @@ def _ndarray_to_wav(audio: np.ndarray, sample_rate: int = SAMPLE_RATE) -> bytes:
 
 
 def _flush_stdin() -> None:
-    """Discard stdin bytes that piled up while not reading (e.g. SPACE in audio mode)."""
     try:
         import termios
         termios.tcflush(sys.stdin.fileno(), termios.TCIFLUSH)
@@ -78,7 +50,6 @@ def _flush_stdin() -> None:
 
 
 class PushToTalk:
-    """Push-to-talk console with audio/text mode switching."""
 
 
     def __init__(
@@ -224,7 +195,6 @@ class PushToTalk:
 
 
     def _dispatch(self, text: str) -> None:
-        """Send text to the agent.  Always runs in a non-main thread."""
         self._agent_busy.set()
         try:
             self.agent.chat_stream(text)
@@ -236,7 +206,6 @@ class PushToTalk:
                 self._prompt()
 
     def _dispatch_audio(self, wav_bytes: bytes) -> None:
-        """Send raw WAV bytes directly to Gemma4's native audio encoder."""
         self._agent_busy.set()
         try:
             self.agent.chat_stream(audio_data=wav_bytes, native_audio=True)
@@ -249,7 +218,6 @@ class PushToTalk:
 
 
     def _on_key_press(self, key) -> None:
-        """Called in pynput's listener thread — must return quickly."""
         if (
             key == kb.Key.space
             and self.mode == "audio"
@@ -266,14 +234,6 @@ class PushToTalk:
 
 
     def _stdin_worker(self) -> None:
-        """
-        Reads lines from stdin in a loop.
-        •  /commands are handled in either mode.
-        •  Plain text is dispatched to the agent only in text mode.
-        •  In audio mode plain text is silently ignored (space characters that
-           accumulate in the terminal buffer while SPACE is held are discarded
-           by _flush_stdin() when switching to text mode).
-        """
         while not self._stop_ev.is_set():
             try:
                 line = sys.stdin.readline()

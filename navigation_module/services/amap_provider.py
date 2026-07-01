@@ -11,9 +11,6 @@ logger = get_logger(__name__)
 
 
 class AMapProvider(BaseMapAPI):
-    """
-    高德地图 API 具体实现类
-    """
 
     def __init__(self):
         config = load_config()
@@ -29,7 +26,6 @@ class AMapProvider(BaseMapAPI):
         return True
 
     def get_location_name(self, lon: float, lat: float) -> str:
-        """调用高德逆地理编码 API"""
         if not self._key_ok():
             return "未知位置"
 
@@ -58,7 +54,6 @@ class AMapProvider(BaseMapAPI):
 
     def get_walking_route(self, start_lon: float, start_lat: float,
                           end_lon: float, end_lat: float) -> dict:
-        """调用高德步行路径规划 API"""
         if not self._key_ok():
             return None
 
@@ -91,7 +86,6 @@ class AMapProvider(BaseMapAPI):
             return None
 
     def get_coordinate_by_name(self, address_name: str, city: str = "") -> tuple:
-        """调用高德正向地理编码 API"""
         if not self._key_ok():
             return None, None
 

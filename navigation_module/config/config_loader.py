@@ -13,15 +13,11 @@ PLACEHOLDER_KEYS = frozenset({"", "AMAP_KEY", "API_KEY", "YOUR_AMAP_KEY_HERE"})
 
 
 def is_valid_api_key(key) -> bool:
-    """判断 API Key 是否为可用的真实密钥 (非空且不属于占位符)。"""
     return isinstance(key, str) and key.strip() not in PLACEHOLDER_KEYS
 
 
 @lru_cache(maxsize=1)
 def load_config() -> dict:
-    """
-    加载并解析 system_config.yaml 文件，并注入环境变量以保证安全。
-    """
     load_dotenv()
     config_path = os.path.join(os.path.dirname(__file__), 'system_config.yaml')
 
