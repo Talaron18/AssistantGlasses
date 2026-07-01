@@ -13,7 +13,7 @@ def capture_photo(save_dir: str = str(_DEFAULT_PHOTO_DIR)) -> dict:
     output_dir = Path(save_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    cap = cv2.VideoCapture(0)  # 0 = OS default camera
+    cap = cv2.VideoCapture(0)
     if not cap.isOpened():
         return {
             "success": False,
@@ -24,7 +24,6 @@ def capture_photo(save_dir: str = str(_DEFAULT_PHOTO_DIR)) -> dict:
         }
 
     try:
-        # Warm-up: discard a few frames so auto-exposure / white-balance settle
         for _ in range(5):
             cap.read()
         time.sleep(0.3)
@@ -39,7 +38,6 @@ def capture_photo(save_dir: str = str(_DEFAULT_PHOTO_DIR)) -> dict:
             "error": "Camera opened but failed to capture a frame.",
         }
 
-    # ---- Save to disk -------------------------------------------------------
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     filename  = f"photo_{timestamp}.jpg"
     filepath  = output_dir / filename
@@ -54,7 +52,6 @@ def capture_photo(save_dir: str = str(_DEFAULT_PHOTO_DIR)) -> dict:
     except OSError as exc:
         return {"success": False, "error": f"Could not write image to {filepath}: {exc}"}
 
-    # ---- Base64 for inline vision input ------------------------------------
     b64 = base64.b64encode(buf).decode("utf-8")
 
     print(f"[capture_photo] Saved → {filepath.resolve()}")

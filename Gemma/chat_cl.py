@@ -57,13 +57,8 @@ import AssistantGlasses.Gemma.config as config
 
 from AssistantGlasses.Agent.code.utils import img_to_base64, to_base64
 from AssistantGlasses.Gemma.tool import capture_photo as _capture_photo
-from AssistantGlasses.voice_module.kokoro_cl import synthesize   # pipelined TTS
+from AssistantGlasses.voice_module.kokoro_cl import synthesize
 
-
-# ── enhanced tool-use instructions injected into every system message ─────────
-# Appending explicit rules here reliably improves function-calling compliance
-# on instruction-tuned local models (Gemma4, Qwen, etc.) that occasionally
-# narrate their intent instead of emitting the tool call directly.
 
 _TOOL_INSTRUCTIONS = """
 
@@ -80,18 +75,11 @@ _TOOL_INSTRUCTIONS = """
 _EN_RE = re.compile(r"[A-Za-z]")
 _ZH_RE = re.compile(r'[\u4e00-\u9fff]')
 
-# ---------------------------------------------------------------------------
-# Mixed-language segmentation helpers
-# ---------------------------------------------------------------------------
-# Tokenises a string into CJK runs, English-word runs, number runs, and
-# single fallback characters.  Adjacent same-language tokens are merged by
-# _iter_lang_segments so that "Gemini 和ChatGPT" becomes:
-#   [("Gemini", "en"), ("和", "zh"), ("ChatGPT", "en")]
 _LANG_SEG_RE = re.compile(
-    r'[\u4e00-\u9fff\u3000-\u303f\uff00-\uffef]+'   # CJK block + full-width / zh punct
-    r'|[A-Za-z][A-Za-z0-9\'\-]*(?:[ \t]+[A-Za-z][A-Za-z0-9\'\-]*)*'  # English word(s)
-    r'|[0-9]+(?:[.,][0-9]+)*'                        # numbers
-    r'|[^\s]',                                        # fallback: any non-space char
+    r'[\u4e00-\u9fff\u3000-\u303f\uff00-\uffef]+'
+    r'|[A-Za-z][A-Za-z0-9\'\-]*(?:[ \t]+[A-Za-z][A-Za-z0-9\'\-]*)*'
+    r'|[0-9]+(?:[.,][0-9]+)*'
+    r'|[^\s]',
     re.UNICODE,
 )
 
@@ -120,7 +108,7 @@ def _iter_lang_segments(text: str):
         elif has_en:
             tok_lang = "en"
         else:
-            tok_lang = cur_lang or "zh"   # numbers/symbols inherit context
+            tok_lang = cur_lang or "zh"
 
         if tok_lang == cur_lang:
             buf += token
@@ -134,10 +122,6 @@ def _iter_lang_segments(text: str):
         yield buf, cur_lang
 
 
-# ---------------------------------------------------------------------------
-# Helpers
-# ---------------------------------------------------------------------------
-
 def _safe_parse_args(raw: str) -> dict:
     """
     Parse tool-call arguments with multiple fallback strategies.
@@ -146,20 +130,17 @@ def _safe_parse_args(raw: str) -> dict:
     if not raw or not raw.strip():
         return {}
 
-    # 1. Direct parse
     try:
         return json.loads(raw)
     except json.JSONDecodeError:
         pass
 
-    # 2. Fix trailing commas  {... ,}  or  [... ,]
     try:
         fixed = re.sub(r",\s*([}\]])", r"\1", raw)
         return json.loads(fixed)
     except json.JSONDecodeError:
         pass
 
-    # 3. Extract first {...} block (model may wrap args in prose)
     try:
         m = re.search(r"\{.*\}", raw, re.DOTALL)
         if m:
@@ -170,10 +151,6 @@ def _safe_parse_args(raw: str) -> dict:
     print(f"[Agent] ⚠ Could not parse tool args: {raw!r}")
     return {}
 
-
-# ---------------------------------------------------------------------------
-# BaseAgent
-# ---------------------------------------------------------------------------
 
 class BaseAgent:
     """
@@ -191,7 +168,6 @@ class BaseAgent:
     PUNCTUATION = frozenset(".!?\n。！？……")
     LOCATION_RE = re.compile(r"\[&location/(.*?)&\]")
 
-    # Patterns that suggest the model described a tool call instead of making one
     _PHANTOM_CAPTURE_RE = re.compile(
         r"\b(i(?:'ll| will| can| am going to)?\s+(?:take|capture|photograph|snap)\b"
         r"|let me (?:use|activate|open) (?:the )?camera)",
@@ -204,7 +180,6 @@ class BaseAgent:
         role: str = "default",
         speech: queue.Queue | None = None,
     ) -> None:
-        # System message with tool instructions appended
         base_setting = config.SYSTEM_SETTING[role]
         self.role_setting = base_setting + _TOOL_INSTRUCTIONS
 
@@ -212,7 +187,6 @@ class BaseAgent:
             {"role": "system", "content": self.role_setting}
         ]
 
-        # Tool schema with tightened description to reduce phantom calls
         self.tools = [
             {
                 "type": "function",
@@ -250,22 +224,15 @@ class BaseAgent:
 
         self.destination = destination
 
-        # tts_queue: receives text chunks from process_stream_and_tools
         self.tts_queue: queue.Queue = speech if speech is not None else queue.Queue()
-        # _play_queue: receives (samples, rate) tuples from _tts_worker
         self._play_queue: queue.Queue = queue.Queue()
 
         self._pending_photo_b64: str | None = None
 
-        # Start pipelined TTS threads
         self._tts_thread  = threading.Thread(target=self._tts_worker,  daemon=True, name="TTS-synth")
         self._play_thread = threading.Thread(target=self._play_worker, daemon=True, name="TTS-play")
         self._tts_thread.start()
         self._play_thread.start()
-
-    # ------------------------------------------------------------------
-    # Lifecycle
-    # ------------------------------------------------------------------
 
 
     def prepare_audio_input(self, wav_bytes: bytes) -> None:
@@ -286,8 +253,8 @@ class BaseAgent:
 
     def stop(self) -> None:
         """Gracefully shut down the TTS pipeline."""
-        self.interrupt_tts()        # drain queues, stop current playback
-        self.tts_queue.put(None)    # sentinel → synthesis thread exits
+        self.interrupt_tts()
+        self.tts_queue.put(None)
         self._tts_thread.join(timeout=3.0)
         self._play_thread.join(timeout=3.0)
 
@@ -307,9 +274,6 @@ class BaseAgent:
         except Exception:
             pass
 
-    # ------------------------------------------------------------------
-    # TTS Stage 1 — text → audio samples
-    # ------------------------------------------------------------------
 
     def detect_lang(self, text: str) -> str:
         """Return 'zh' if *any* Chinese characters are present, else 'en'.
@@ -335,14 +299,13 @@ class BaseAgent:
         while True:
             text = self.tts_queue.get()
             if text is None:
-                self._play_queue.put(None)   # cascade sentinel to playback thread
+                self._play_queue.put(None)
                 break
             try:
                 has_zh = bool(_ZH_RE.search(text))
                 has_en = bool(_EN_RE.search(text))
 
                 if has_zh and has_en:
-                    # ── Mixed language: synthesise per segment, concatenate ──
                     arrays: list[np.ndarray] = []
                     rate: int | None = None
                     for seg, lang in _iter_lang_segments(text):
@@ -359,7 +322,6 @@ class BaseAgent:
                         )
                         self._play_queue.put((samples, rate or 24_000))
                 else:
-                    # ── Mono-lingual: single synthesise call ────────────────
                     lang = "zh" if has_zh else "en"
                     samples, rate = synthesize(text, lang)
                     self._play_queue.put((samples, rate))
@@ -367,9 +329,6 @@ class BaseAgent:
             except Exception as exc:
                 print(f"[TTS] Synthesis error: {exc}")
 
-    # ------------------------------------------------------------------
-    # TTS Stage 2 — audio samples → speaker
-    # ------------------------------------------------------------------
 
     def _play_worker(self) -> None:
         while True:
@@ -383,9 +342,6 @@ class BaseAgent:
             except Exception as exc:
                 print(f"[TTS] Playback error: {exc}")
 
-    # ------------------------------------------------------------------
-    # Input preparation
-    # ------------------------------------------------------------------
 
     def prepare_input(self, input_flow, img_path: bool = False) -> None:
         if img_path:
@@ -399,7 +355,6 @@ class BaseAgent:
             self.conversation.append({"role": "user", "content": input_flow})
 
         else:
-            # cv2 / PIL frame
             b64 = to_base64(input_flow)
             if not b64:
                 print("[Agent] Could not encode image object.")
@@ -435,9 +390,6 @@ class BaseAgent:
             ],
         }
 
-    # ------------------------------------------------------------------
-    # Tool implementations
-    # ------------------------------------------------------------------
 
     def capture_photo(self, save_dir: str = "./photos") -> dict:
         result = _capture_photo(save_dir=save_dir)
@@ -445,9 +397,6 @@ class BaseAgent:
             self._pending_photo_b64 = result.pop("base64")
         return result
 
-    # ------------------------------------------------------------------
-    # Detect text-based (phantom) tool calls
-    # ------------------------------------------------------------------
 
     def _detect_text_tool_call(self, text: str) -> dict | None:
         """
@@ -467,15 +416,11 @@ class BaseAgent:
             pass
         return None
 
-    # ------------------------------------------------------------------
-    # Stream processor
-    # ------------------------------------------------------------------
 
     def process_stream_and_tools(self, stream) -> list:
         memory        = ""
         tool_acc: dict = defaultdict(lambda: {"id": "", "name": "", "arguments": ""})
         sentence_buf  = ""
-        #is_first_chunk = True
 
         print("Assistant: ", end="", flush=True)
 
@@ -485,18 +430,13 @@ class BaseAgent:
             choice = chunk.choices[0]
             delta  = choice.delta
 
-            # ── text delta ──────────────────────────────────────────────
             content = delta.content or ""
             if content:
                 print(content, end="", flush=True)
                 memory       += content
                 sentence_buf += content
 
-                #word_count = len(sentence_buf.split())
-                #char_count = len(sentence_buf.strip())
 
-                # Flush heuristic tuned for both English (word count) and
-                # Chinese (character count, since words have no spaces).
                 should_flush = (
                     sentence_buf.rstrip().endswith((
                         ".", "!", "?",
@@ -519,7 +459,6 @@ class BaseAgent:
 
                         sentence_buf = ""
 
-            # ── tool-call deltas ────────────────────────────────────────
             if delta.tool_calls:
                 for tc in delta.tool_calls:
                     idx = tc.index
@@ -536,13 +475,9 @@ class BaseAgent:
 
         print()
 
-        # Flush remaining sentence fragment
         if sentence_buf.strip():
             self.tts_queue.put(sentence_buf.strip())
 
-        # ── Phantom tool-call detection ──────────────────────────────────
-        # If the model described a tool call in text instead of calling it,
-        # attempt to parse and execute it here.
         if not tool_acc and memory.strip():
             phantom = self._detect_text_tool_call(memory.strip())
             if phantom:
@@ -552,9 +487,8 @@ class BaseAgent:
                     "name":      phantom["name"],
                     "arguments": json.dumps(phantom.get("parameters", phantom.get("arguments", {}))),
                 }
-                memory = ""  # suppress narration from being saved
+                memory = ""
 
-        # ── Execute tool calls ───────────────────────────────────────────
         if tool_acc:
             print("\n[Agent] Activating tools…")
             assistant_calls = [
@@ -603,10 +537,6 @@ class BaseAgent:
         return self.conversation
 
 
-# ---------------------------------------------------------------------------
-# Gemma4Agent
-# ---------------------------------------------------------------------------
-
 class Gemma4Agent(BaseAgent):
 
     def __init__(
@@ -622,9 +552,6 @@ class Gemma4Agent(BaseAgent):
         self.model: str = getattr(config, "LLAMA_MODEL", "gemma4")
         print(f"[Gemma4Agent] Ready — {host}  model: {self.model}")
 
-    # ------------------------------------------------------------------
-    # Audio helpers
-    # ------------------------------------------------------------------
 
     @staticmethod
     def _ndarray_to_wav(audio: np.ndarray, sample_rate: int = 16_000) -> bytes:
@@ -674,9 +601,6 @@ class Gemma4Agent(BaseAgent):
             print(f"[Agent] Transcription error: {exc}")
             return ""
 
-    # ------------------------------------------------------------------
-    # Main entry point
-    # ------------------------------------------------------------------
 
     def chat_stream(
         self,
@@ -709,7 +633,6 @@ class Gemma4Agent(BaseAgent):
                 self.prepare_audio_input(wav_bytes)
 
             if not native_audio:
-                # ── Whisper transcription path (reliable default) ────────
                 print("[Agent] Transcribing audio via llama.cpp Whisper…")
                 transcribed = self.transcribe_audio(wav_bytes)
                 if not transcribed:
@@ -722,18 +645,15 @@ class Gemma4Agent(BaseAgent):
             self.prepare_input(input_flow, img_path)
 
         try:
-            # ── Primary call ────────────────────────────────────────────
             stream = self.client.chat.completions.create(
                 model    = self.model,
                 messages = self.conversation,
                 stream   = True,
                 tools    = self.tools if tool else None,
-                # Lower temperature improves tool-call compliance on local models
                 temperature = 0.2,
             )
             self.process_stream_and_tools(stream)
 
-            # ── Vision follow-up after capture_photo ─────────────────────
             if self._pending_photo_b64:
                 b64 = self._pending_photo_b64
                 self._pending_photo_b64 = None

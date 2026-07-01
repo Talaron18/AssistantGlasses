@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 nav_test.py — 导航实地测试一体化脚本 (终端仪表盘 + 网页地图监控)
 
@@ -48,31 +47,25 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from core.nav_controller import NavController
 from algo.geo.haversine import haversine_distance
 
-# ── 可调参数 ──────────────────────────────────────────────────────────────
 HTTP_PORT       = 8800
-TRACK_MAXLEN    = 1500      # 网页轨迹点上限 (约 12 分钟 @ 0.5s)
-SAMPLE_INTERVAL = 0.5       # 终端刷新 / 滤波轨迹采样周期
-TRACK_INTERVAL  = 1.0       # CSV 记录周期
+TRACK_MAXLEN    = 1500
+SAMPLE_INTERVAL = 0.5
+TRACK_INTERVAL  = 1.0
 CLEAR_LINE      = "\x1b[2K\r"
 
-# ── 全局共享状态 ──────────────────────────────────────────────────────────
 _lock = threading.Lock()
 _print_lock = threading.Lock()
 _state = {
-    "raw_track":      deque(maxlen=TRACK_MAXLEN),   # 原始定位轨迹 (GCJ-02)
-    "filtered_track": deque(maxlen=TRACK_MAXLEN),   # 滤波输出轨迹 (GCJ-02)
+    "raw_track":      deque(maxlen=TRACK_MAXLEN),
+    "filtered_track": deque(maxlen=TRACK_MAXLEN),
     "raw_pos":        None,
-    "rmc_times":      deque(maxlen=200),            # RMC 到达时间戳 → 帧率
+    "rmc_times":      deque(maxlen=200),
     "last_rmc_ts":    None,
     "tts_log":        deque(maxlen=10),
 }
 
 controller: NavController | None = None
 
-
-# ──────────────────────────────────────────────────────────────────────────
-# 终端输出
-# ──────────────────────────────────────────────────────────────────────────
 
 def log_line(msg: str) -> None:
     """滚动日志行 (先清掉仪表盘行, 防止互相覆盖)。"""
@@ -82,10 +75,6 @@ def log_line(msg: str) -> None:
         sys.stdout.write(f"[{ts}] {msg}\n")
         sys.stdout.flush()
 
-
-# ──────────────────────────────────────────────────────────────────────────
-# 埋点: 截获滤波前的原始 RMC 定位
-# ──────────────────────────────────────────────────────────────────────────
 
 def install_raw_fix_recorder(ctrl: NavController) -> None:
     orig_parse = ctrl.parser.parse
@@ -107,10 +96,6 @@ def install_raw_fix_recorder(ctrl: NavController) -> None:
     ctrl.parser.parse = recording_parse
 
 
-# ──────────────────────────────────────────────────────────────────────────
-# TTS 消费: 终端打印 + 网页日志
-# ──────────────────────────────────────────────────────────────────────────
-
 def tts_consumer(tts_q: queue.Queue) -> None:
     while True:
         msg = tts_q.get()
@@ -119,10 +104,6 @@ def tts_consumer(tts_q: queue.Queue) -> None:
         with _lock:
             _state["tts_log"].appendleft(f"[{ts}] {msg}")
 
-
-# ──────────────────────────────────────────────────────────────────────────
-# 采集线程: 滤波轨迹采样 + 终端仪表盘 + CSV 记录
-# ──────────────────────────────────────────────────────────────────────────
 
 def collector(ctrl: NavController, stop_evt: threading.Event,
               track_path: str) -> None:
@@ -140,7 +121,6 @@ def collector(ctrl: NavController, stop_evt: threading.Event,
             step = nav["step"]
             state = nav["state"]
 
-            # ① 滤波轨迹采样 (供网页)
             if pos:
                 p = (pos["lon"], pos["lat"])
                 if p != last_pos:
@@ -150,7 +130,6 @@ def collector(ctrl: NavController, stop_evt: threading.Event,
                             (round(p[0], 6), round(p[1], 6))
                         )
 
-            # ② 距离与漂移
             remaining = straight = drift = None
             if pos and state == "NAVIGATING" and ctrl.target_lon is not None:
                 remaining = ctrl._remaining_distance(pos["lon"], pos["lat"])
@@ -162,7 +141,6 @@ def collector(ctrl: NavController, stop_evt: threading.Event,
                 drift = haversine_distance(
                     raw_pos[0], raw_pos[1], pos["lon"], pos["lat"])
 
-            # ③ 终端仪表盘行
             pos_str  = f"{pos['lon']:.6f},{pos['lat']:.6f}" if pos else "无定位"
             step_str = (f"{step['current']}/{step['total']} "
                         f"{step['instruction'][:12]}") if step else "—"
@@ -175,7 +153,6 @@ def collector(ctrl: NavController, stop_evt: threading.Event,
                 sys.stdout.write(CLEAR_LINE + line)
                 sys.stdout.flush()
 
-            # ④ CSV 记录
             now = time.monotonic()
             if pos and now - last_track_ts >= TRACK_INTERVAL:
                 last_track_ts = now
@@ -192,10 +169,6 @@ def collector(ctrl: NavController, stop_evt: threading.Event,
 
             time.sleep(SAMPLE_INTERVAL)
 
-
-# ──────────────────────────────────────────────────────────────────────────
-# 状态快照 (供网页 /status 接口)
-# ──────────────────────────────────────────────────────────────────────────
 
 def _planned_route(ctrl: NavController) -> list:
     """从高德 steps 的 polyline 字段拼出整条规划路线 (GCJ-02, 可直接上图)。"""
@@ -275,10 +248,6 @@ def build_status() -> dict:
         "tts_log": tts_log,
     }
 
-
-# ──────────────────────────────────────────────────────────────────────────
-# 网页 (Leaflet + 高德 GCJ-02 瓦片)
-# ──────────────────────────────────────────────────────────────────────────
 
 PAGE = """<!DOCTYPE html>
 <html lang="zh"><head><meta charset="utf-8">
@@ -409,13 +378,9 @@ class Handler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(body)
 
-    def log_message(self, *args):   # 静默 HTTP 访问日志, 不刷屏
+    def log_message(self, *args):
         pass
 
-
-# ──────────────────────────────────────────────────────────────────────────
-# 主流程
-# ──────────────────────────────────────────────────────────────────────────
 
 def main() -> None:
     global controller
@@ -430,16 +395,14 @@ def main() -> None:
     nav_q: queue.Queue = queue.Queue()
 
     controller = NavController(nav_queue=nav_q, tts_queue=tts_q)
-    install_raw_fix_recorder(controller)     # 必须在 start() 之前装好埋点
+    install_raw_fix_recorder(controller)
     controller.start()
 
     threading.Thread(target=tts_consumer, args=(tts_q,), daemon=True).start()
 
-    # 网页服务
     server = ThreadingHTTPServer(("0.0.0.0", HTTP_PORT), Handler)
     threading.Thread(target=server.serve_forever, daemon=True).start()
 
-    # 轨迹文件 + 采集线程 (终端仪表盘 / 网页轨迹 / CSV 三合一)
     track_path = datetime.now().strftime("track_%Y%m%d_%H%M%S.csv")
     log_line(f"轨迹将记录到: {track_path}")
     stop_evt = threading.Event()
@@ -447,7 +410,6 @@ def main() -> None:
         target=collector, args=(controller, stop_evt, track_path), daemon=True
     ).start()
 
-    # 等首次 GPS 定位 (最多 60 秒)
     log_line("等待 GNSS 首次定位 (请到开阔处)…")
     t0 = time.monotonic()
     while controller.current_pos is None:
@@ -459,7 +421,6 @@ def main() -> None:
         lon, lat = controller.current_pos
         log_line(f"✓ 已定位: {lon:.6f}, {lat:.6f}")
 
-    # 命令循环 (首个目的地也在这里输入)
     log_line("请输入目的地名称后回车:")
     try:
         while True:

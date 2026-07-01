@@ -36,8 +36,8 @@ def stream(listen_q,action_q):
     cobra=pvcobra.create(access_key=os.environ.get('PORCUPINE_KEY'))
     pa=pyaudio.PyAudio()
     streaming=pa.open(
-        input_device_index=1, # match the right input device
-        channels=1, # porcupine requires single channel input
+        input_device_index=1,
+        channels=1,
         rate=audio.sample_rate,
         format=pyaudio.paInt16,
         input=True,
@@ -57,23 +57,22 @@ def stream(listen_q,action_q):
 
             keywords=audio.process(pcm_ints)
             if system is False:
-                if keywords==0: # initiation keyword
+                if keywords==0:
                     system=True
                     activate_listening,last_detection,audio_buffer,blank=starting_chat()
                     action_q.put("on")
             else:
                 if keywords<3:
                     system=True
-                    if keywords==1: # camera initiation
+                    if keywords==1:
                         action_q.put("photo")
-                    elif keywords==2: # returning to chat mode on hearing NAVI-END
+                    elif keywords==2:
                         activate_listening,last_detection,audio_buffer,blank=starting_chat()
                         action_q.put("navi_kill")
-                if keywords>=3: # stop conversation and send user input to agent
+                if keywords>=3:
                     system=False
                     activate_listening=False
                     if not blank and len(audio_buffer)>0:
-                        #process_stt(audio_buffer,audio.sample_rate,stt_queue)
                         audio_buffer=[]
                     if keywords==3:
                         action_q.put("agent")
@@ -104,7 +103,6 @@ def stream(listen_q,action_q):
     except Exception as e:
         print(f"Receiving interuption: {e}")
     finally:
-        # clear cache occupancy
         streaming.stop_stream()
         streaming.close()
         pa.terminate()

@@ -16,7 +16,6 @@ class AMapProvider(BaseMapAPI):
     """
 
     def __init__(self):
-        # 加载安全配置
         config = load_config()
         self.api_key = config['api']['amap']['key']
         self.geocode_url = config['api']['amap']['geocode_url']
@@ -37,14 +36,13 @@ class AMapProvider(BaseMapAPI):
         params = {
             'key': self.api_key,
             'location': f"{lon},{lat}",
-            'radius': 200,    # 搜索半径 200 米
+            'radius': 200,
             'extensions': 'base'
         }
 
         try:
-            # 网络请求设置超时
             response = requests.get(self.geocode_url, params=params, timeout=3.0)
-            response.raise_for_status()  # 检查 HTTP 状态码
+            response.raise_for_status()
 
             data = response.json()
             if data['status'] == '1' and data['regeocode']:
@@ -78,11 +76,10 @@ class AMapProvider(BaseMapAPI):
             if data['status'] == '1' and data['route']['paths']:
                 path = data['route']['paths'][0]
 
-                # 提取精简的导航信息
                 route_info = {
-                    "distance_meters": int(path['distance']),   # 总步行的米数
-                    "duration_seconds": int(path['duration']),  # 预计要走多少秒
-                    "steps": path['steps'],                     # 具体文本指令
+                    "distance_meters": int(path['distance']),
+                    "duration_seconds": int(path['duration']),
+                    "steps": path['steps'],
                 }
                 return route_info
             else:
@@ -111,7 +108,6 @@ class AMapProvider(BaseMapAPI):
 
             data = response.json()
             if data['status'] == '1' and data.get('geocodes'):
-                # 高德返回的 location 为一个字符串
                 location_str = data['geocodes'][0]['location']
                 lon_str, lat_str = location_str.split(',')
                 return float(lon_str), float(lat_str)

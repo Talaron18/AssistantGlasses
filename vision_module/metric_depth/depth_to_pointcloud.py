@@ -32,7 +32,6 @@ from depth_anything_v2.dpt import DepthAnythingV2
 
 
 def main():
-    # Parse command-line arguments
     parser = argparse.ArgumentParser(description='Generate depth maps and point clouds from images.')
     parser.add_argument('--encoder', default='vitl', type=str, choices=['vits', 'vitb', 'vitl', 'vitg'],
                         help='Model encoder to use.')
@@ -51,10 +50,8 @@ def main():
 
     args = parser.parse_args()
 
-    # Determine the device to use (CUDA, MPS, or CPU)
     DEVICE = 'cuda' if torch.cuda.is_available() else 'mps' if torch.backends.mps.is_available() else 'cpu'
 
-    # Model configuration based on the chosen encoder
     model_configs = {
         'vits': {'encoder': 'vits', 'features': 64, 'out_channels': [48, 96, 192, 384]},
         'vitb': {'encoder': 'vitb', 'features': 128, 'out_channels': [96, 192, 384, 768]},
@@ -62,12 +59,10 @@ def main():
         'vitg': {'encoder': 'vitg', 'features': 384, 'out_channels': [1536, 1536, 1536, 1536]}
     }
 
-    # Initialize the DepthAnythingV2 model with the specified configuration
     depth_anything = DepthAnythingV2(**{**model_configs[args.encoder], 'max_depth': args.max_depth})
     depth_anything.load_state_dict(torch.load(args.load_from, map_location='cpu'))
     depth_anything = depth_anything.to(DEVICE).eval()
 
-    # Get the list of image files to process
     if os.path.isfile(args.img_path):
         if args.img_path.endswith('txt'):
             with open(args.img_path, 'r') as f:
@@ -77,25 +72,19 @@ def main():
     else:
         filenames = glob.glob(os.path.join(args.img_path, '**/*'), recursive=True)
 
-    # Create the output directory if it doesn't exist
     os.makedirs(args.outdir, exist_ok=True)
 
-    # Process each image file
     for k, filename in enumerate(filenames):
         print(f'Processing {k+1}/{len(filenames)}: {filename}')
 
-        # Load the image
         color_image = Image.open(filename).convert('RGB')
         width, height = color_image.size
 
-        # Read the image using OpenCV
         image = cv2.imread(filename)
         pred = depth_anything.infer_image(image, height)
 
-        # Resize depth prediction to match the original image size
         resized_pred = Image.fromarray(pred).resize((width, height), Image.NEAREST)
 
-        # Generate mesh grid and calculate point cloud coordinates
         x, y = np.meshgrid(np.arange(width), np.arange(height))
         x = (x - width / 2) / args.focal_length_x
         y = (y - height / 2) / args.focal_length_y
@@ -103,7 +92,6 @@ def main():
         points = np.stack((np.multiply(x, z), np.multiply(y, z), z), axis=-1).reshape(-1, 3)
         colors = np.array(color_image).reshape(-1, 3) / 255.0
 
-        # Create the point cloud and save it to the output directory
         pcd = o3d.geometry.PointCloud()
         pcd.points = o3d.utility.Vector3dVector(points)
         pcd.colors = o3d.utility.Vector3dVector(colors)

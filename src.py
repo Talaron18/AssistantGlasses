@@ -60,13 +60,10 @@ class Control():
                         print(f"--> Agent response time: {time.time()-agent_start:.2f} seconds")
                         
                 elif current_action=="photo":
-                    # put the camera-control function here
                     print("Taking picuture...")
                 elif current_action=="navi_zoom":
-                    # put the navigation initialization function here
                     print("Starting navigation...")
                 elif current_action=="navi_kill":
-                    # set the status of navigation to False
                     print("Navigation palsed...")
                     self.nav_thread.shutdown()
                     self.destination.put("STOP")

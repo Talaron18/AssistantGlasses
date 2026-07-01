@@ -38,41 +38,18 @@ import numpy as np
 import sounddevice as sd
 from pynput import keyboard as kb
 
-# ── project path ──────────────────────────────────────────────────────────────
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
 from AssistantGlasses.Gemma.chat_cl import Gemma4Agent
 from AssistantGlasses.navigation_module.core.nav_controller import NavController
-# ─────────────────────────────────────────────────────────────────────────────
-# ── Configuration ─────────────────────────────────────────────────────────────
-# ─────────────────────────────────────────────────────────────────────────────
 
-SAMPLE_RATE        = 16_000   # Hz — Whisper's native rate; don't change
+SAMPLE_RATE        = 16_000
 CHANNELS           = 1
-BLOCK_SIZE         = 512      # frames per callback  (~32 ms latency)
-WHISPER_MODEL_SIZE = "base"   # "tiny"=fastest  "base"=balanced  "small"=better quality
-MIN_RECORD_SECS    = 0.3      # clips shorter than this are silently discarded
+BLOCK_SIZE         = 512
+WHISPER_MODEL_SIZE = "base"
+MIN_RECORD_SECS    = 0.3
 
-# ── STT backend ────────────────────────────────────────────────────────────────
-# "whisper_local"   Local faster-whisper model.  Fastest and most reliable.
-#                   Default recommendation until Gemma4 native audio stabilises.
-#
-# "whisper_llama"   llama.cpp /v1/audio/transcriptions endpoint.
-#                   Needs a second model served with e.g. --alias whisper.
-#
-# "gemma4_native"   Send raw WAV directly into Gemma4's audio encoder.
-#                   EXPERIMENTAL — requires llama-server ≥ build b8773 and
-#                   --mmproj mmproj-BF16.gguf --jinja flags.
-#                   llama.cpp tracks active regressions in issues #21868/#23688.
-#                   Advantage over Whisper: Gemma4 hears tone and emotional
-#                   context, not just the transcribed words.
-#                   Auto-falls back to "whisper_llama" on HTTP 500.
-#
-STT_BACKEND = "whisper_local"   # change me when you're ready to experiment
+STT_BACKEND = "whisper_local"
 
-
-# ─────────────────────────────────────────────────────────────────────────────
-# ── Helpers ───────────────────────────────────────────────────────────────────
-# ─────────────────────────────────────────────────────────────────────────────
 
 def _ndarray_to_wav(audio: np.ndarray, sample_rate: int = SAMPLE_RATE) -> bytes:
     """Convert float32 mono numpy array to 16-bit PCM WAV bytes."""
@@ -100,14 +77,9 @@ def _flush_stdin() -> None:
             pass
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# ── Main class ────────────────────────────────────────────────────────────────
-# ─────────────────────────────────────────────────────────────────────────────
-
 class PushToTalk:
     """Push-to-talk console with audio/text mode switching."""
 
-    # ── init ──────────────────────────────────────────────────────────────────
 
     def __init__(
         self,
@@ -115,7 +87,6 @@ class PushToTalk:
         agent_host: str = "http://localhost:8090",
         language: str   = "en",
     ) -> None:
-        # ── Gemma4 agent ───────────────────────────────────────────────────
         self._dest_q: queue.Queue = queue.Queue()
         self.agent = Gemma4Agent(
             destination = self._dest_q,
@@ -124,7 +95,6 @@ class PushToTalk:
         )
         self._language = language
 
-        # ── STT backend ────────────────────────────────────────────────────
         if STT_BACKEND == "whisper_local":
             try:
                 from faster_whisper import WhisperModel
@@ -150,27 +120,20 @@ class PushToTalk:
         else:
             raise ValueError(f"Unknown STT_BACKEND: {STT_BACKEND!r}")
 
-        # ── state ──────────────────────────────────────────────────────────
         self.mode          : str  = "audio"
         self._recording    : bool = False
         self._frames       : list = []
         self._rec_lock               = threading.Lock()
-        self._agent_busy             = threading.Event()   # set while agent is active
-        self._stop_ev                = threading.Event()   # set to quit
+        self._agent_busy             = threading.Event()
+        self._stop_ev                = threading.Event()
         self._space_down   : bool = False
 
-        # ── pynput global keyboard listener ────────────────────────────────
-        # suppress=False — let the terminal still see keystrokes so that
-        # _stdin_worker can read commands typed in text mode.
         self._listener = kb.Listener(
             on_press   = self._on_key_press,
             on_release = self._on_key_release,
             suppress   = False,
         )
 
-    # ══════════════════════════════════════════════════════════════════════════
-    # ── Recording ─────────────────────────────────────────────────────────────
-    # ══════════════════════════════════════════════════════════════════════════
 
     def _audio_cb(self, indata, frames, t, status) -> None:
         if self._recording:
@@ -195,7 +158,6 @@ class PushToTalk:
                 print(f"\n[mic] ✗ Cannot open microphone: {exc}")
                 return
 
-        # Interrupt any ongoing TTS the moment the user starts speaking
         self.agent.interrupt_tts()
         print("\r🔴  Recording…  (release SPACE to send)     ", end="", flush=True)
 
@@ -222,14 +184,9 @@ class PushToTalk:
         audio = np.concatenate(frames).flatten()
         print(f"\r🔈  Transcribing… ({duration:.1f} s)                  ", flush=True)
 
-        # Mark busy *before* spawning the thread to prevent a second
-        # recording starting while transcription is in progress.
         self._agent_busy.set()
         threading.Thread(target=self._transcribe, args=(audio,), daemon=True).start()
 
-    # ══════════════════════════════════════════════════════════════════════════
-    # ── Transcription ─────────────────────────────────────────────────────────
-    # ══════════════════════════════════════════════════════════════════════════
 
     def _transcribe(self, audio: np.ndarray) -> None:
         text = ""
@@ -239,7 +196,7 @@ class PushToTalk:
                     audio,
                     beam_size  = 1,
                     vad_filter = True,
-                    language   = None,   # auto-detect
+                    language   = None,
                 )
                 text = " ".join(s.text for s in segs).strip()
 
@@ -248,12 +205,10 @@ class PushToTalk:
                 text = self.agent.transcribe_audio(wav_bytes)
 
             elif STT_BACKEND == "gemma4_native":
-                # Send raw audio straight into Gemma4's encoder.
-                # chat_stream() handles auto-fallback to whisper_llama on 500.
                 wav_bytes = _ndarray_to_wav(audio)
                 if text:
                     print(f"You (voice): {text}")
-                self._dispatch_audio(wav_bytes)   # special path — skips text display
+                self._dispatch_audio(wav_bytes)
                 return
 
         except Exception as exc:
@@ -261,19 +216,16 @@ class PushToTalk:
 
         if text:
             print(f"You (voice): {text}")
-            self._dispatch(text)          # _dispatch manages _agent_busy
+            self._dispatch(text)
         else:
             print("[mic] (silence — nothing sent)")
             self._agent_busy.clear()
             self._prompt()
 
-    # ══════════════════════════════════════════════════════════════════════════
-    # ── Agent dispatch ────────────────────────────────────────────────────────
-    # ══════════════════════════════════════════════════════════════════════════
 
     def _dispatch(self, text: str) -> None:
         """Send text to the agent.  Always runs in a non-main thread."""
-        self._agent_busy.set()           # idempotent; also covers text-mode path
+        self._agent_busy.set()
         try:
             self.agent.chat_stream(text)
         except Exception as exc:
@@ -295,9 +247,6 @@ class PushToTalk:
             if not self._stop_ev.is_set():
                 self._prompt()
 
-    # ══════════════════════════════════════════════════════════════════════════
-    # ── pynput callbacks ──────────────────────────────────────────────────────
-    # ══════════════════════════════════════════════════════════════════════════
 
     def _on_key_press(self, key) -> None:
         """Called in pynput's listener thread — must return quickly."""
@@ -313,12 +262,8 @@ class PushToTalk:
     def _on_key_release(self, key) -> None:
         if key == kb.Key.space and self._space_down:
             self._space_down = False
-            # Run _stop_rec in its own thread so the pynput callback returns fast
             threading.Thread(target=self._stop_rec, daemon=True).start()
 
-    # ══════════════════════════════════════════════════════════════════════════
-    # ── stdin reader (always-on background thread) ────────────────────────────
-    # ══════════════════════════════════════════════════════════════════════════
 
     def _stdin_worker(self) -> None:
         """
@@ -336,7 +281,7 @@ class PushToTalk:
                 self._stop_ev.set()
                 return
 
-            if not line:               # EOF
+            if not line:
                 self._stop_ev.set()
                 return
 
@@ -347,7 +292,6 @@ class PushToTalk:
                     print("You: ", end="", flush=True)
                 continue
 
-            # ── commands ──────────────────────────────────────────────
             if text.startswith("/"):
                 cmd = text[1:].lower()
                 if cmd in ("text", "t"):
@@ -363,7 +307,6 @@ class PushToTalk:
                         print("You: ", end="", flush=True)
                 continue
 
-            # ── text input ────────────────────────────────────────────
             if self.mode == "text":
                 if self._agent_busy.is_set():
                     print("[mic] Still processing previous message, please wait…")
@@ -372,18 +315,14 @@ class PushToTalk:
                     threading.Thread(
                         target=self._dispatch, args=(text,), daemon=True
                     ).start()
-            # In audio mode, non-command text is ignored
 
-    # ══════════════════════════════════════════════════════════════════════════
-    # ── Utilities ─────────────────────────────────────────────────────────────
-    # ══════════════════════════════════════════════════════════════════════════
 
     def _switch_mode(self, new_mode: str) -> None:
         if self.mode == new_mode:
             return
         self.mode = new_mode
         if new_mode == "text":
-            _flush_stdin()        # discard accumulated SPACE presses from audio mode
+            _flush_stdin()
         print(f"\n[→ {new_mode.upper()} mode]")
         self._prompt()
 
@@ -402,9 +341,6 @@ class PushToTalk:
             )
             print("You: ", end="", flush=True)
 
-    # ══════════════════════════════════════════════════════════════════════════
-    # ── Entry point ───────────────────────────────────────────────────────────
-    # ══════════════════════════════════════════════════════════════════════════
 
     def run(self) -> None:
         print("=" * 62)
@@ -421,7 +357,6 @@ class PushToTalk:
         self._prompt()
 
         try:
-            # Main thread blocks here; all work happens in daemon threads.
             self._stop_ev.wait()
         except KeyboardInterrupt:
             pass
@@ -432,8 +367,6 @@ class PushToTalk:
             self.agent.stop()
             print("[mic] Goodbye.")
 
-
-# ─────────────────────────────────────────────────────────────────────────────
 
 if __name__ == "__main__":
     PushToTalk().run()

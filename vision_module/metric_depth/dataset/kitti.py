@@ -45,7 +45,7 @@ class KITTI(Dataset):
         
         sample['image'] = torch.from_numpy(sample['image'])
         sample['depth'] = torch.from_numpy(sample['depth'])
-        sample['depth'] = sample['depth'] / 256.0  # convert in meters
+        sample['depth'] = sample['depth'] / 256.0
         
         sample['valid_mask'] = sample['depth'] > 0
         

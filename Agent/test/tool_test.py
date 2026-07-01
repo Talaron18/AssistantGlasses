@@ -1,4 +1,3 @@
-# AssistantGlasses/Agent/test/tool_test.py
 
 import cv2
 import os

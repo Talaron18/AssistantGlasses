@@ -1,5 +1,5 @@
 import io
-import time  # 👈 记得导入 time 模块
+import time
 import keyboard
 import sounddevice as sd
 import soundfile as sf
@@ -51,17 +51,13 @@ class PushToTalkRecorder:
             callback=self._callback,
         ):
             while True:
-                # 1. 阻塞等待第一次按下空格
                 keyboard.wait("space")
                 print("\r[MIC] 🔴 Recording...", end="", flush=True)
                 self.start()
                 
-                # 2. 🔥 核心改动：用实时状态轮询代替不稳定的事件监听
-                # 只要你还按着空格，程序就每隔 20 毫秒检查一次，直到你真正松开
                 while keyboard.is_pressed("space"):
-                    time.sleep(0.02)  # 稍微歇一会，避免 CPU 飙高
+                    time.sleep(0.02)
                 
-                # 3. 确确实实松开了，触发停止
                 result = self.stop()
                 print("\r[MIC] 🟢 Finished.   ", flush=True)
                 

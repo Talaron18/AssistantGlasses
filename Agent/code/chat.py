@@ -52,7 +52,6 @@ class BaseAgent:
         self.tts_thread.start()
         self.edge_play=stream_audio
 
-    # remove wake words from text input
     def strip_wake_words(self, text: str) -> str:
         WAKE_WORDS=config.WAKE_WORDS
         lower_text = text.lower().strip()
@@ -61,7 +60,6 @@ class BaseAgent:
                 return text[len(wake_word):].lstrip(" ,.!?:")
         return text
     
-    # text to voice with
     def tts_go(self):
         while True:
             text=self.tts_queue.get()
@@ -100,7 +98,6 @@ class BaseAgent:
                 self.tts_queue.task_done()
 
     def prepare_input(self, input_flow, img_path=False):
-        # handle image path for image uploads
         if img_path:
             prepared = img_to_base64(input_flow)
             print("Image upload: ", bool(prepared))
@@ -110,11 +107,9 @@ class BaseAgent:
             self.conversation.append({"role": "user", "content": [{"type": "image_url", "image_url": {"url": f"data:image/jpg;base64,{prepared}"}}]})
         else:
             if isinstance(input_flow, str):
-                # clean wake words before adding to conversation
                 cleaned_input = self.strip_wake_words(input_flow)
                 self.conversation.append({"role": "user", "content": [{"type": "text", "text": cleaned_input}]})
             else:
-                # handle cv2 and PIL images for uploads
                 prepared = to_base64(input_flow)
                 self.conversation.append({"role": "user", "content": [{"type": "image_url", "image_url": {"url": f"data:image/jpg;base64,{prepared}"}}]})
 
@@ -134,7 +129,6 @@ class BaseAgent:
                 continue
             delta = chunk.choices[0].delta
             word_count=len(sentence_buffer.split())
-            # Stream text content
             content=getattr(delta,"content",None) or getattr(delta,"reasoning_content",None)
             if content:
                 print(content,end="",flush=True)
@@ -153,7 +147,6 @@ class BaseAgent:
                         is_first_chunk=False
                 
 
-            # Stream tool calls
             if getattr(delta, "tool_calls", None):
                 if not tool_id:
                     print("\nActivating tools...\n")
@@ -168,10 +161,9 @@ class BaseAgent:
                         func_name += tool_func.name
                     if getattr(tool_func, "arguments", None):
                         func_args += tool_func.arguments             
-        print() # End of stream line break
+        print()
         if sentence_buffer.strip():
             self.tts_queue.put(sentence_buffer.strip())
-        # Execute tool if one was called
         if tool_id:
             try:
                 args = json.loads(func_args)

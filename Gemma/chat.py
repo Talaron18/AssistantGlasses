@@ -10,20 +10,15 @@ from collections import defaultdict
 from dotenv import load_dotenv
 from openai import OpenAI
 
-# 确保路径适配你的项目结构
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
 import AssistantGlasses.Gemma.config as config
 
 from AssistantGlasses.Agent.code.utils import to_base64, img_to_base64
 from AssistantGlasses.Gemma.tool import capture_photo as _capture_photo
 
-# 引入优化后的 TTS 模块与新写的 Mic 模块
 from AssistantGlasses.voice_module.kokoro import speak, init_tts
 from AssistantGlasses.speech_module.mic import PushToTalkRecorder
 
-# ---------------------------------------------------------------------------
-# BaseAgent
-# ---------------------------------------------------------------------------
 
 class BaseAgent:
     PUNCTUATION = frozenset("...\n……")
@@ -36,7 +31,6 @@ class BaseAgent:
         role: str = "default",
         speech: queue.Queue | None = None,
     ) -> None:
-        # 如果 config 中没有该角色，默认提供一个系统提示
         self.role_setting = getattr(config, "SYSTEM_SETTING", {}).get(role, "You are a helpful voice assistant.")
         self.conversation: list[dict] = [
             {"role": "system", "content": self.role_setting}
@@ -68,7 +62,6 @@ class BaseAgent:
 
         self._pending_photo_b64: str | None = None
 
-        # 启动 TTS 消费者线程
         self._tts_thread = threading.Thread(target=self._tts_worker, daemon=True)
         self._tts_thread.start()
 
@@ -77,7 +70,6 @@ class BaseAgent:
         self._tts_thread.join()
     
     def _tts_worker(self) -> None:
-        # 在子线程中提前初始化 TTS，防止主线程卡顿
         init_tts(self.lan)
         while True:
             text = self.tts_queue.get()
@@ -150,7 +142,6 @@ class BaseAgent:
             choice = chunk.choices[0]
             delta = choice.delta
 
-            # ---- Text delta ------------------------------------------------
             content = delta.content or ""
             if content:
                 print(content, end="", flush=True)
@@ -166,15 +157,11 @@ class BaseAgent:
                             location = match.group(1).strip()
                             self.destination.put(location)
                             self.tts_queue.put(f"请问您是要导航到{location}吗？")
-                            # 替换掉导航标签后，如果还有剩余文本，不应该丢弃
                             sentence_buf = self.LOCATION_RE.sub("", sentence_buf)
                     else:
-                        # 把完整的一句话放进 TTS 队列
                         self.tts_queue.put(sentence_buf.strip())
-                        # 清空缓冲区，开始攒下一句话
                         sentence_buf = ""
 
-            # ---- Tool-call deltas ------------------------------------------
             if delta.tool_calls:
                 for tc in delta.tool_calls:
                     idx = tc.index
@@ -189,13 +176,11 @@ class BaseAgent:
             if choice.finish_reason in ("stop", "tool_calls"):
                 break
 
-        print()  # newline after streamed output
+        print()
 
-        # Flush any remaining sentence fragment (比如大模型最后没加标点就结束了)
         if sentence_buf.strip():
             self.tts_queue.put(sentence_buf.strip())
 
-        # ---- Execute tool calls -------------------------------------------
         if tool_acc:
             print("\n[Agent] Activating tools...")
             assistant_calls = [
@@ -243,10 +228,6 @@ class BaseAgent:
         return self.conversation
 
 
-# ---------------------------------------------------------------------------
-# Gemma4Agent
-# ---------------------------------------------------------------------------
-
 class Gemma4Agent(BaseAgent):
     def __init__(
         self,
@@ -270,7 +251,6 @@ class Gemma4Agent(BaseAgent):
         img_path: bool = False,
         tool: bool = True,
     ) -> list:
-        # 自动根据当前的模式决定路由逻辑
         if self.input_mode == "audio":
             self.prepare_audio_input(input_flow)
         else:
@@ -311,9 +291,6 @@ class Gemma4Agent(BaseAgent):
         return self.conversation
 
 
-# ---------------------------------------------------------------------------
-# Interactive CLI Loop (可用于独立测试运行)
-# ---------------------------------------------------------------------------
 if __name__ == "__main__":
     dummy_dest = queue.Queue()
     agent = Gemma4Agent(destination=dummy_dest, role="default")
@@ -323,7 +300,6 @@ if __name__ == "__main__":
     print("\n--- Assistant Ready ---")
     print("Commands: /audio (Switch to voice), /text (Switch to text typing), /quit")
     
-    # 默认开启 Text 模式测试
     agent.set_input_mode("text")
 
     try:
@@ -348,7 +324,6 @@ if __name__ == "__main__":
                     agent.set_input_mode("text")
                     continue
                 
-                # 开始监听空格键录音
                 audio_data = next(audio_generator)
                 if audio_data and "base64" in audio_data:
                     agent.chat_stream(audio_data["base64"])
