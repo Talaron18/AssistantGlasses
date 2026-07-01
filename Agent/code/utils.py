@@ -2,20 +2,17 @@ import base64
 from io import BytesIO
 import cv2
 
-# pillow-image to base64
 def pil_to_base64(img):
     buffered=BytesIO()
     img.save(buffered,format="JPG")
     return base64.b64encode(buffered.getvalue()).decode("utf-8")
 
-# opencv-image to base64
 def cv_to_base64(img):
     checkpoint,buffered=cv2.imencode(".jpg",img)
     if not checkpoint:
         return None
     return base64.b64encode(buffered).decode("utf-8")
 
-# stored image to base64
 def img_to_base64(img_path):
     with open(img_path,"rb") as img:
         base64_string=base64.b64encode(img.read())

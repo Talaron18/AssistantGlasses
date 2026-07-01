@@ -25,12 +25,9 @@ class NMEAParser:
             return None
 
         try:
-            # 使用 pynmea2 解析
             msg = pynmea2.parse(raw_line)
 
-            # GPRMC (经纬度、速度、航向、数据有效性)
             if isinstance(msg, pynmea2.types.talker.RMC):
-                # 'A' 有效，'V' 无效
                 is_valid = (msg.status == 'A')
                 
                 return {
@@ -42,7 +39,6 @@ class NMEAParser:
                     "true_course": float(msg.true_course) if msg.true_course else 0.0
                 }
 
-            # GPGGA (卫星数量、HDOP、海拔) 
             elif isinstance(msg, pynmea2.types.talker.GGA):
                 return {
                     "type": "GGA",
@@ -54,6 +50,5 @@ class NMEAParser:
             return None
 
         except pynmea2.ParseError as e:
-            # 丢弃意外脏数据
             logger.debug(f"丢弃残缺/乱码数据: {e}")
             return None

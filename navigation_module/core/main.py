@@ -18,10 +18,9 @@ def main(tts_queue: queue.Queue, nav_queue: queue.Queue) -> None:
     logger.info("导航模块启动中...")
 
     controller = NavController(nav_queue=nav_queue, tts_queue=tts_queue)
-    controller.start()  # 后台 daemon 线程, 执行 NavController.run()
+    controller.start()
 
     try:
-        # 保持主线程存活; join 带超时使 Ctrl+C 能被及时捕获
         while controller.is_alive():
             controller.join(timeout=1.0)
 
@@ -41,7 +40,6 @@ def _debug_tts_consumer(tts_queue: queue.Queue) -> None:
 
 
 if __name__ == "__main__":
-    # 独立运行时自行构造两个队列, 并启动一个调试用 TTS 打印线程。
     _tts_q: queue.Queue = queue.Queue()
     _nav_q: queue.Queue = queue.Queue()
 

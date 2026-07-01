@@ -24,14 +24,11 @@ from misaki import en, zh
 
 load_dotenv()
 
-# ── module-level cache (populated lazily, protected by _lock) ─────────────────
 
 _lock:   threading.Lock          = threading.Lock()
 _kokoro: dict[str, Kokoro]       = {}
 _g2p:    dict[str, object]       = {}
 
-
-# ── lazy loaders ──────────────────────────────────────────────────────────────
 
 def _ensure_zh() -> tuple[Kokoro, zh.ZHG2P]:
     """Load Chinese model + G2P exactly once."""
@@ -55,9 +52,6 @@ def _ensure_en() -> tuple[Kokoro, en.G2P]:
             print("[TTS] Loading English model…", end=" ", flush=True)
             _g2p["en"] = en.G2P(version="1.1")
 
-            # Keep the original kwarg (voice_path) in case the installed
-            # kokoro-onnx version differs from the Chinese one; add
-            # vocab_config only when the env var is present.
             kwargs: dict = {
                 "model_path": os.environ["ONNX-EN"],
                 "voices_path": os.environ["BIN-EN"],
@@ -67,8 +61,6 @@ def _ensure_en() -> tuple[Kokoro, en.G2P]:
             print("ready.")
     return _kokoro["en"], _g2p["en"]
 
-
-# ── public API ────────────────────────────────────────────────────────────────
 
 def synthesize(text: str, lan: str = "default") -> tuple:
     """
@@ -92,7 +84,6 @@ def synthesize(text: str, lan: str = "default") -> tuple:
     if lan == "en":
         kokoro, g2p = _ensure_en()
         phonemes, _ = g2p(text)
-        # positional voice arg matches original create() call
         return kokoro.create(phonemes, "af_heart", is_phonemes=True)
 
     raise ValueError(f"[TTS] Language '{lan}' is not supported.")
@@ -104,8 +95,6 @@ def speak(text: str, lan: str = "default") -> None:
     sd.play(samples, sample_rate)
     sd.wait()
 
-
-# ── CLI smoke-test ────────────────────────────────────────────────────────────
 
 if __name__ == "__main__":
     speak(

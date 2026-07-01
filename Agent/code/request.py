@@ -19,7 +19,7 @@ class ZaiAgent():
         self.tools=[
             {
                 "type":"function",
-                "name":"quicktest", # enter function name
+                "name":"quicktest",
                 "description":"a quick test for external tools",
                 "parameters":{
                     "type":"object",
@@ -48,7 +48,6 @@ class ZaiAgent():
         self.client=ZhipuAiClient(api_key=API_KEY,max_retries=3)
     
     def chat_stream(self,input_flow,img_path=False,tool=True):
-        # loading local images
         if img_path:
             prepared=img_to_base64(input_flow)
             if isinstance(prepared,str):
@@ -57,10 +56,8 @@ class ZaiAgent():
                 print("Failed to load image...")
             self.conversation.append({"role":"user","content":[{"type":"image_url","image_url":{"url":f"data:image/jpg;base64,{prepared}"}}]})
         else:
-            # add text input to conversation
             if isinstance(input_flow,str):
                 self.conversation.append({"role":"user","content":[{"type":"text","text":input_flow}]})
-            # add image input to conversation
             else:
                 prepared=to_base64(input_flow)
                 self.conversation.append({"role":"user","content":[{"type":"image_url","image_url":{"url":f"data:image/jpg;base64,{prepared}"}}]})
@@ -71,18 +68,18 @@ class ZaiAgent():
             stream=True,
             tools=self.tools if tool else None,
             thinking={
-                "type":"disabled" # set this to "disabled" if speed is too slow
+                "type":"disabled"
             }
         )
         memory=""
         tool_id=None
         func1_name=""
         func1_args=""
-        print("Assistant: ",end="",flush=True) # disable this line afterwards
+        print("Assistant: ",end="",flush=True)
         for chunk in response:      
             delta=chunk.choices[0].delta
             if delta.content:
-                print(delta.content,end="",flush=True) # disable this line afterwards
+                print(delta.content,end="",flush=True)
                 memory+=delta.content
             if delta.tool_calls:
                 print("Activating tools...\n")
@@ -93,7 +90,7 @@ class ZaiAgent():
                     func1_name+=tool_func.name
                 if tool_func.arguments:
                     func1_args+=tool_func.arguments
-        print() # disable this line afterwards
+        print()
         if tool_id:
             import json
             args=json.loads(func1_args)
@@ -124,13 +121,12 @@ class ZaiAgent():
 class SiliconflowAgent():
     def __init__(self,role="default"):
         role_setting=config.SYSTEM_SETTING[role]
-        # print(role_setting)
         self.quicktest=quicktest
         self.tools=[
             {
                 "type":"function",
                 "function":{
-                    "name":"quicktest", # enter function name
+                    "name":"quicktest",
                     "description":"play some music",
                     "parameters":{
                         "type":"object",
@@ -161,7 +157,6 @@ class SiliconflowAgent():
         self.client=OpenAI(api_key=API_KEY,base_url="https://api.siliconflow.cn/v1")
 
     def chat_stream(self,input_flow,img_path=False,tool=True):
-        # loading local images
         if img_path:
             prepared=img_to_base64(input_flow)
             if isinstance(prepared,str):
@@ -170,10 +165,8 @@ class SiliconflowAgent():
                 print("Failed to load image...")
             self.conversation.append({"role":"user","content":[{"type":"image_url","image_url":{"url":f"data:image/jpg;base64,{prepared}"}}]})
         else:
-            # add text input to conversation
             if isinstance(input_flow,str):
                 self.conversation.append({"role":"user","content":[{"type":"text","text":input_flow}]})
-            # add image input to conversation
             else:
                 prepared=to_base64(input_flow)
                 self.conversation.append({"role":"user","content":[{"type":"image_url","image_url":{"url":f"data:image/jpg;base64,{prepared}"}}]})
@@ -184,9 +177,6 @@ class SiliconflowAgent():
                 tools=self.tools if tool else None,
                 tool_choice="auto",
                 stream=True,
-                #extra_body={
-                #    "thinking_budget":4096 # change this parameter to adjust response time, token consumption and accuracy
-                #}
             )
         except Exception as e:
             print(f"Error: {e}")
@@ -196,13 +186,13 @@ class SiliconflowAgent():
         tool_id=None
         func1_name=""
         func1_args=""
-        print("Assistant: ",end="",flush=True) # disable this line afterwards
+        print("Assistant: ",end="",flush=True)
         for chunk in response:
             if not chunk.choices:
                 continue
             delta=chunk.choices[0].delta
             if hasattr(delta,"content") and delta.content:
-                print(delta.content,end="",flush=True) # disable this line afterwards
+                print(delta.content,end="",flush=True)
                 memory+=delta.content
             else:
                 if hasattr(delta, 'reasoning_content') and delta.reasoning_content:
@@ -218,7 +208,7 @@ class SiliconflowAgent():
                         func1_name+=tool_func.name
                     if tool_func.arguments:
                         func1_args+=tool_func.arguments
-        print() # disable this line afterwards
+        print()
         if tool_id:
             print(f"System: Tool {func1_name} triggered...")
             import json

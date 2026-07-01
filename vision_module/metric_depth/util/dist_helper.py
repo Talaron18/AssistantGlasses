@@ -17,7 +17,6 @@ def setup_distributed(backend="nccl", port=None):
         world_size = int(os.environ["SLURM_NTASKS"])
         node_list = os.environ["SLURM_NODELIST"]
         addr = subprocess.getoutput(f"scontrol show hostname {node_list} | head -n1")
-        # specify master port
         if port is not None:
             os.environ["MASTER_PORT"] = str(port)
         elif "MASTER_PORT" not in os.environ:

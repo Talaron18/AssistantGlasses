@@ -4,7 +4,6 @@ import sys
 from functools import lru_cache
 from dotenv import load_dotenv
 
-# 将工程根目录加入系统路径
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from utils.logger import get_logger
 
@@ -34,7 +33,6 @@ def load_config() -> dict:
         try:
             config_dict = yaml.safe_load(f)
 
-            # 安全覆盖机制：优先从操作系统环境变量读取 API Key
             env_amap_key = os.environ.get('AMAP_API_KEY')
             if env_amap_key:
                 config_dict['api']['amap']['key'] = env_amap_key

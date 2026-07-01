@@ -6,7 +6,6 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-# 全局缓存，避免每次 speak 时的毫秒级加载延迟
 _global_kokoro = None
 _global_g2p = None
 _global_voice = None
@@ -15,7 +14,7 @@ def init_tts(lan="default"):
     global _global_kokoro, _global_g2p, _global_voice
     
     if _global_kokoro is not None:
-        return # 已经初始化过
+        return
 
     print("[TTS] Initializing Kokoro TTS models...")
     if lan in("zh", "default"):
@@ -40,7 +39,6 @@ def init_tts(lan="default"):
 def speak(text, lan="default"):
     global _global_kokoro, _global_g2p, _global_voice
     
-    # 确保调用前已初始化
     if _global_kokoro is None:
         init_tts(lan)
         
@@ -53,8 +51,6 @@ def speak(text, lan="default"):
             is_phonemes=True,
         )
         
-        # 阻塞播放：因为 chat.py 中的 _tts_worker 本身就在后台线程
-        # 这里用 sd.wait() 可以确保一句话播完再播下一句，不会叠音
         sd.play(samples, sr)
         sd.wait() 
     except Exception as e:

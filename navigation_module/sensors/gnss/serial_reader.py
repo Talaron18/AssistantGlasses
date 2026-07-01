@@ -11,13 +11,11 @@ from config.config_loader import load_config
 
 logger = get_logger(__name__)
 
-# 断线后两次重连尝试之间的最小间隔
 RECONNECT_INTERVAL_S = 5.0
 
 
 class GNSSSerialReader(BaseSensor):
     def __init__(self):
-        # 加载配置
         config = load_config()
         self.port = config['hardware']['gnss']['port']
         self.baud_rate = config['hardware']['gnss']['baud_rate']
@@ -26,13 +24,10 @@ class GNSSSerialReader(BaseSensor):
         self.serial_conn = None
         self.is_connected = False
 
-        # 非阻塞读取缓冲区
         self._buffer = ""
 
-        # 断线重连节流时间戳
         self._last_reconnect_ts = 0.0
 
-        # 打开物理串口
         self._connect()
 
     def _connect(self):
@@ -59,7 +54,6 @@ class GNSSSerialReader(BaseSensor):
         if time.monotonic() - self._last_reconnect_ts < RECONNECT_INTERVAL_S:
             return
         logger.info(f"尝试重新连接 GNSS 模块 {self.port} …")
-        # 先确保旧句柄被释放
         if self.serial_conn:
             try:
                 self.serial_conn.close()
@@ -78,22 +72,16 @@ class GNSSSerialReader(BaseSensor):
                 return None
 
         try:
-            # 检查操作系统底层缓冲区是否有数据准备好
             if self.serial_conn.in_waiting > 0:
-                # 读出所有可用字节，不阻塞
                 raw_data = self.serial_conn.read(self.serial_conn.in_waiting)
-                # 拼接到内部缓冲区
                 self._buffer += raw_data.decode('ascii', errors='ignore')
 
-            # 检查缓冲区内是否拼接成了一个完整的行
             if '\n' in self._buffer:
-                # 分割出第一行，剩下的留给下一次
                 line, self._buffer = self._buffer.split('\n', 1)
                 clean_line = line.strip()
                 if clean_line:
                     return clean_line
 
-            # 若没有完整的一行，瞬间返回 None
             return None
 
         except serial.SerialException as e:

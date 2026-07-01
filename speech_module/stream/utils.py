@@ -5,7 +5,6 @@ import os
 import time
 import noisereduce as nr
 from datetime import timedelta
-# keyword check 
 def wake(handle, pcm_bytes):
     pcm_ints = struct.unpack_from("h" * handle.frame_length, pcm_bytes)
     return handle.process(pcm_ints) == 0
@@ -15,16 +14,12 @@ def recognition(pipe, audio_buffer,rate,denoise_mode=False):
     if audio_buffer is None or len(audio_buffer)==0:
         print("Invalid input detected...")
         return ""
-    # set "denoise=True" to activate denoise function
     if denoise_mode:
         audio_ready=denoise(audio_buffer,rate)
     else:
         audio_ready=audio_buffer
     audio_float32 = audio_ready.astype(np.float32) / 32768.0
     try:
-        # do not mix multiple languages
-        # follow the format: "<|**|>" to set languages
-        # eg. "<|en|>""<|de|>""<|fr|>""<|ja|>""<|zh|>" ISO-639-1
         result = pipe.generate(audio_float32.tolist(),language="<|ja|>")
     except Exception as e:
         print(f"Error occurred:{e}")
@@ -38,7 +33,6 @@ def voice_to_text(frames,rate,res_q):
     print("Model path found..." if whisper else "Model not found...")
     pipe=openvino_genai.WhisperPipeline(whisper,"GPU")
     if pipe is not None:
-        # turn on denoise function here if needed
         print("Whisper initiated...")
         text=recognition(pipe,frames,rate)
         print(text)
@@ -55,7 +49,7 @@ def denoise(audio_int16,rate):
     ATTENTION! gpiod is only available on Linux
 """
 
-def setup_button(chip_path, pin): # find chippath with "sudo gpioinfo"
+def setup_button(chip_path, pin):
     import gpiod
     settings = gpiod.LineSettings(
         edge_detection=gpiod.line.Edge.FALLING,
@@ -70,7 +64,6 @@ def manual_close(handle, pcm_bytes, mode="voice", button_request=None):
         return handle.process(pcm_ints) > 0
     elif mode == "button" and button_request:
         if button_request.wait_edge_events(timedelta(seconds=0)):
-            # Clear the event from the buffer
             button_request.read_edge_events() 
             return True
     return False

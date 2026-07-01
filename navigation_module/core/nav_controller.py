@@ -41,45 +41,35 @@ class NavController(threading.Thread):
         self.nav_queue = nav_queue
         self.tts_queue = tts_queue
 
-        # ── sensors & algorithms ───────────────────────────────────────────
         self.reader      = GNSSSerialReader()
         self.parser      = NMEAParser()
         self.kalman      = LinearKalmanFilter()
         self.transformer = CoordTransformer()
 
-        # ── cloud service ──────────────────────────────────────────────────
         self.map_api = AMapProvider()
 
-        # ── config ────────────────────────────────────────────────────────
         config = load_config()
         self.broadcast_distances: list[int] = sorted(
             config['navigation']['broadcast_distances'], reverse=True
         )
 
-        # ── thread-safe GPS position ───────────────────────────────────────
         self._pos_lock: threading.Lock = threading.Lock()
         self._gcj_lon:  float | None   = None
         self._gcj_lat:  float | None   = None
 
-        # ── Kalman filter timing & quality ─────────────────────────────────
-        # 记录上一次 predict 调用时间戳，用于主循环 20Hz predict
         self._last_predict_ts: float | None = None
-        # 最近一帧 GGA 的 定位质量, 默认乐观值
         self._last_hdop: float = 1.0
 
-        # ── state machine ──────────────────────────────────────────────────
         self.state:       str          = "IDLE"
         self.target_name: str | None   = None
         self.target_lon:  float | None = None
         self.target_lat:  float | None = None
 
-        # ── route tracking───────────────────────
         self._steps:           list[dict] = []
         self._step_idx:        int        = 0
         self._announced:       set[int]   = set()
         self._deviation_count: int        = 0
         
-    # GPS helpers
     @property
     def current_pos(self) -> tuple[float, float] | None:
         """Return (gcj_lon, gcj_lat) or None if no fix yet."""
@@ -101,19 +91,17 @@ class NavController(threading.Thread):
         for _ in range(10):
             raw = self.reader.read_data()
             if not raw:
-                break  # 缓冲区已经读空，跳出循环
+                break
 
             parsed = self.parser.parse(raw)
             if not parsed:
                 continue
 
-            # GGA: 提取定位质量 (HDOP), 注入滤波器做噪声自适应
             if parsed.get('type') == 'GGA':
                 self._last_hdop = parsed.get('hdop', 99.9)
                 self.kalman.set_hdop(self._last_hdop)
                 continue
 
-            # RMC: 主定位帧
             if parsed.get('type') == 'RMC' and parsed.get('is_valid'):
                 if self._last_hdop > MAX_USABLE_HDOP:
                     logger.debug(f"HDOP={self._last_hdop:.1f} 过大, 丢弃本帧定位")
@@ -143,10 +131,9 @@ class NavController(threading.Thread):
             time.sleep(GPS_POLL_S)
             self._update_gps()
             if not self.nav_queue.empty():
-                return False   # user sent a new command; bail out
+                return False
         return True
 
-    # Route step helpers
     @staticmethod
     def _get_step_exit(step: dict) -> tuple[float, float] | None:
         if step.get('exit_lon') and step.get('exit_lat'):
@@ -194,10 +181,10 @@ class NavController(threading.Thread):
         if not advanced:
             return
 
-        self._deviation_count = 0  # 步骤推进后重置偏离计数
+        self._deviation_count = 0
 
         if self._step_idx >= len(self._steps):
-            return  # last step done; arrival check handles the rest
+            return
 
         next_step   = self._steps[self._step_idx]
         instruction = next_step.get('instruction', str(next_step))
@@ -245,17 +232,15 @@ class NavController(threading.Thread):
         try:
             total = float(total_dist)
         except (TypeError, ValueError):
-            return  # 总距离未知时不做预填充
+            return
         self._announced = {t for t in self.broadcast_distances if t >= total}
 
-    # Main loop
     def run(self) -> None:
         logger.info("导航后台线程已启动")
 
         while True:
             time.sleep(LOOP_INTERVAL)
 
-            # predict 在主循环 20Hz 频率下运行，与 GPS update 解耦
             now = time.monotonic()
             dt = (now - self._last_predict_ts) if self._last_predict_ts is not None else LOOP_INTERVAL
             self._last_predict_ts = now
@@ -263,7 +248,6 @@ class NavController(threading.Thread):
 
             self._update_gps()
 
-            # ── IDLE ──────────────────────────────────────────────────────────
             if self.state == "IDLE":
                 try:
                     new_target = self.nav_queue.get_nowait()
@@ -275,14 +259,12 @@ class NavController(threading.Thread):
                     self._reset_route()
                     continue
 
-                # New destination received
                 self.target_name = new_target
                 self._reset_route()
                 self.tts_queue.put(f"收到，正在规划去{self.target_name}的路线，请稍候。")
                 self.state = "PLANNING"
                 logger.info(f"状态 → PLANNING: 目标 '{self.target_name}'")
 
-            # ── PLANNING ──────────────────────────────────────────────────────
             elif self.state == "PLANNING":
                 if not self._wait_for_fix():
                     self.state = "IDLE"
@@ -295,7 +277,6 @@ class NavController(threading.Thread):
                     self.target_name
                 )
 
-                # 用 is None 判定, 避免经度 0.0 被误判为查询失败
                 if self.target_lon is None:
                     logger.error(f"找不到地点: '{self.target_name}'")
                     self.tts_queue.put(
@@ -313,11 +294,9 @@ class NavController(threading.Thread):
                     self.state = "IDLE"
                     continue
 
-                # Route acquired
                 self._steps = route.get('steps', [])
                 total_dist  = route.get('distance_meters', '未知')
 
-                # 预填充已超出路线总长的播报阈值
                 self._seed_announced_thresholds(total_dist)
 
                 first_instr = (
@@ -334,15 +313,13 @@ class NavController(threading.Thread):
                     f"总距离 {total_dist} 米"
                 )
 
-            # ── NAVIGATING ────────────────────────────────────────────────────
             elif self.state == "NAVIGATING":
                 pos = self.current_pos
                 if pos is None:
-                    continue   # waiting for GPS fix, stay quiet
+                    continue
 
                 lon, lat = pos
 
-                # ── 偏离路线检测 ─────────────────────────────────────────
                 if self._is_off_route(lon, lat):
                     self._deviation_count += 1
                     if self._deviation_count >= DEVIATION_CONFIRM_COUNT:
@@ -395,7 +372,6 @@ class NavController(threading.Thread):
                     logger.info(f"目的地变更 → PLANNING: '{new_cmd}'")
 
 
-    # Public tool API  (called by Gemma4Agent's tool dispatcher)
     def start_navigation(self, destination: str) -> dict:
         """
         Enqueue a navigation request.  Returns immediately; the background
@@ -413,8 +389,6 @@ class NavController(threading.Thread):
         """Return a snapshot of the current navigation state (thread-safe)."""
         pos = self.current_pos
 
-        # 先对可能被 run() 线程整体替换的引用取本地快照,
-        # 避免 len 检查与下标访问之间列表被换掉的竞态。
         steps    = self._steps
         step_idx = self._step_idx
 
@@ -433,7 +407,6 @@ class NavController(threading.Thread):
             "gps_fix":    pos is not None,
         }
 
-    # Lifecycle
 
     def shutdown(self) -> None:
         """Release hardware resources gracefully."""

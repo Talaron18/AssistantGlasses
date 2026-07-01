@@ -2,7 +2,6 @@ import os
 from dotenv import load_dotenv
 from optimum.intel import OVModelForSpeechSeq2Seq
 from transformers import AutoProcessor
-# Import the specific tokenizer converter
 from openvino_tokenizers import convert_tokenizer 
 import openvino as ov
 

@@ -20,7 +20,7 @@ def detection(ak,st,ss,streaming,audio,keys,q:queue.Queue | None=None):
         print("Starting realtime recognition...")
         rate=audio.sample_rate
         length=audio.frame_length
-        text=loop3(st,ss,cobra,audio,streaming,length,rate,q,keys) # add audio input if using loop3
+        text=loop3(st,ss,cobra,audio,streaming,length,rate,q,keys)
     elif isinstance(audio,AudioSegment):
         print("Starting audio recognition...")
         rate=audio.frame_rate
@@ -31,7 +31,6 @@ def detection(ak,st,ss,streaming,audio,keys,q:queue.Queue | None=None):
     cobra.delete()
     return text
 
-# inner loop for realtime speech2text
 def loop1(cobra,streaming,length,rate):
     last_detection_time=time.time()
     load_dotenv()
@@ -40,7 +39,6 @@ def loop1(cobra,streaming,length,rate):
     audio_buffer=[]
     blank=True
     while True:
-        #print(streaming.is_active())
         pcm_bytes=streaming.read(length)
         pcm_ints=struct.unpack_from("h"*length,pcm_bytes)
         audio_buffer.append(np.frombuffer(pcm_bytes,dtype=np.int16))
@@ -57,7 +55,6 @@ def loop1(cobra,streaming,length,rate):
         text="Standing by..."
     return text
 
-# inner loop for recorded speech2text
 def loop2(cobra,streaming,length,audio,rate):
     last_detection_time=time.time()
     load_dotenv()
@@ -67,7 +64,6 @@ def loop2(cobra,streaming,length,audio,rate):
     bytes=length*2
     for i in range(0,len(data),bytes):
         chunk=data[i:i+bytes]
-        # play and check if audio is loaded successfully, delete the next line after checking
         streaming.write(chunk)
         if len(chunk)==bytes:
             pcm=struct.unpack_from("h"*length,chunk)
@@ -103,7 +99,6 @@ def loop3(st,ss,cobra,audio,streaming,length,rate,q,keys):
                 break
         except:
             pass
-        #print(streaming.is_active())
         pcm_bytes=streaming.read(length)
         pcm_ints=struct.unpack_from("h"*length,pcm_bytes)
         audio_buffer.append(np.frombuffer(pcm_bytes,dtype=np.int16))
