@@ -7,11 +7,6 @@ import numpy as np
 import base64
 
 class PushToTalkRecorder:
-    """
-    Hold SPACE -> record
-    Release SPACE -> stop
-    Returns base64 WAV ready for llama.cpp audio input.
-    """
     def __init__(self, samplerate=16000, channels=1, dtype="int16"):
         self.samplerate = samplerate
         self.channels = channels

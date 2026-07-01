@@ -1,23 +1,3 @@
-"""
-Born out of Depth Anything V1 Issue 36
-Make sure you have the necessary libraries installed.
-Code by @1ssb
-
-This script processes a set of images to generate depth maps and corresponding point clouds.
-The resulting point clouds are saved in the specified output directory.
-
-Usage:
-    python script.py --encoder vitl --load-from path_to_model --max-depth 20 --img-path path_to_images --outdir output_directory --focal-length-x 470.4 --focal-length-y 470.4
-
-Arguments:
-    --encoder: Model encoder to use. Choices are ['vits', 'vitb', 'vitl', 'vitg'].
-    --load-from: Path to the pre-trained model weights.
-    --max-depth: Maximum depth value for the depth map.
-    --img-path: Path to the input image or directory containing images.
-    --outdir: Directory to save the output point clouds.
-    --focal-length-x: Focal length along the x-axis.
-    --focal-length-y: Focal length along the y-axis.
-"""
 
 import argparse
 import cv2

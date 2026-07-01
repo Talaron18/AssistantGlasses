@@ -8,9 +8,6 @@ from AssistantGlasses.speech_module.stream.record import stream
 from AssistantGlasses.navigation_module.core.nav_controller import NavController
 import queue
 
-"""
-    yet to be tested
-"""
 class Control():
     def __init__(self):
         self.speech=queue.Queue()

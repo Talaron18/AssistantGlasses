@@ -45,9 +45,6 @@ def denoise(audio_int16,rate):
     processed_audio=nr.reduce_noise(y=audio_int16,sr=rate,prop_decrease=0.6)
     return processed_audio
 
-"""
-    ATTENTION! gpiod is only available on Linux
-"""
 
 def setup_button(chip_path, pin):
     import gpiod

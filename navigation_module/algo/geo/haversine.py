@@ -1,9 +1,6 @@
 import math
 
 def haversine_distance(lon1, lat1, lon2, lat2):
-    """
-    计算两点间的球面距离（meter)
-    """
     radius = 6371000
     dlat = math.radians(lat2 - lat1)
     dlon = math.radians(lon2 - lon1)

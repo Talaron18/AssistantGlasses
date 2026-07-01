@@ -8,11 +8,6 @@ if not os.path.exists(LOG_DIR):
     os.makedirs(LOG_DIR)
 
 def get_logger(module_name: str) -> logging.Logger:
-    """
-    获取一个配置好的 Logger 实例
-    :param module_name: 调用该日志的模块名称
-    :return: logging.Logger 对象
-    """
     logger = logging.getLogger(module_name)
     
     if logger.handlers:

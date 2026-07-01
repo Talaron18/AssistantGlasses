@@ -11,10 +11,6 @@ logger = get_logger(__name__)
 
 
 class LinearKalmanFilter(BaseFilter):
-    """
-    基于局部笛卡尔坐标系 (近似 ENU) 的线性卡尔曼滤波器
-    状态向量 X = [x, y, v_x, v_y]^T (单位: 米, 米/秒)
-    """
 
     LOW_SPEED_KMH: float = 1.0
     LOW_SPEED_VEL_VAR: float = 100.0
@@ -44,13 +40,11 @@ class LinearKalmanFilter(BaseFilter):
 
 
     def set_hdop(self, hdop: float):
-        """注入最近一帧 GGA 解析出的 HDOP, 用于位置观测噪声自适应。"""
         if hdop and hdop > 0:
             self._hdop = float(hdop)
 
 
     def _latlon_to_xy(self, lon: float, lat: float) -> tuple:
-        """将经纬度投影到以原点为中心的局部笛卡尔坐标系 (米)"""
         if self.origin_lon is None:
             return 0.0, 0.0
         rad_lat0 = math.radians(self.origin_lat)
@@ -59,7 +53,6 @@ class LinearKalmanFilter(BaseFilter):
         return x, y
 
     def _xy_to_latlon(self, x: float, y: float) -> tuple:
-        """将局部坐标系 (米) 反解回经纬度"""
         if self.origin_lon is None:
             return 0.0, 0.0
         rad_lat0 = math.radians(self.origin_lat)
@@ -69,7 +62,6 @@ class LinearKalmanFilter(BaseFilter):
 
 
     def initialize(self, lon: float, lat: float):
-        """设定局部坐标系原点并初始化状态"""
         self.origin_lon = lon
         self.origin_lat = lat
         self.X = np.zeros((4, 1))
@@ -78,10 +70,6 @@ class LinearKalmanFilter(BaseFilter):
         logger.info(f"卡尔曼滤波器已初始化: 投影原点 ({lon:.6f}, {lat:.6f})")
 
     def predict(self, dt: float):
-        """
-        预测阶段： X_predict = F * X_prev
-
-        """
         if not self.is_initialized:
             return
         if dt <= 0:
@@ -94,12 +82,6 @@ class LinearKalmanFilter(BaseFilter):
         self.P = np.dot(np.dot(self.F, self.P), self.F.T) + self.Q
 
     def update(self, measurement: tuple):
-        """
-        两阶段观测融合:
-          Pass 1 — 位置观测 (_H_POS 2×4), 始终执行;
-          Pass 2 — 速度观测 (_H_VEL 2×4), 仅在有效行走速度时执行。
-        :param measurement: (经度, 纬度, 速度km/h, 航向角)
-        """
         if len(measurement) != 4:
             logger.error(f"观测维度异常, 需要4维, 当前为: {len(measurement)}")
             return
@@ -135,9 +117,6 @@ class LinearKalmanFilter(BaseFilter):
             self.P = (I4 - K_v @ self._H_VEL) @ self.P
 
     def get_state(self) -> tuple:
-        """
-        输出滤波后的平滑坐标
-        """
         if not self.is_initialized:
             return 0.0, 0.0
 

@@ -1,17 +1,11 @@
 import math
 
 class CoordTransformer:
-    """
-    WGS-84 转 GCJ-02 
-    """
     def __init__(self):
         self.a = 6378245.0
         self.ee = 0.00669342162296594323
 
     def wgs84_to_gcj02(self, lon, lat):
-        """
-        原始 GPS 经纬度转高德经纬度
-        """
         if self._is_out_of_china(lon, lat):
             return lon, lat
 
@@ -27,7 +21,6 @@ class CoordTransformer:
         return lon + dlon, lat + dlat
 
     def _is_out_of_china(self, lon, lat):
-        """判定是否在国内"""
         return not (73.66 < lon < 135.05 and 3.86 < lat < 53.55)
 
     def _transform_lat(self, x, y):

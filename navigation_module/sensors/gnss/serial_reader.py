@@ -31,7 +31,6 @@ class GNSSSerialReader(BaseSensor):
         self._connect()
 
     def _connect(self):
-        """内部方法：执行物理串口连接"""
         self._last_reconnect_ts = time.monotonic()
         try:
             self.serial_conn = serial.Serial(
@@ -48,9 +47,6 @@ class GNSSSerialReader(BaseSensor):
             logger.debug(f"错误信息: {e}")
 
     def _try_reconnect(self):
-        """
-        现在在节流间隔内周期性尝试重连。
-        """
         if time.monotonic() - self._last_reconnect_ts < RECONNECT_INTERVAL_S:
             return
         logger.info(f"尝试重新连接 GNSS 模块 {self.port} …")
@@ -63,9 +59,6 @@ class GNSSSerialReader(BaseSensor):
         self._connect()
 
     def read_data(self) -> str:
-        """
-        非阻塞式按行读取串口数据
-        """
         if not self.is_connected or self.serial_conn is None:
             self._try_reconnect()
             if not self.is_connected:
@@ -93,11 +86,9 @@ class GNSSSerialReader(BaseSensor):
             return None
 
     def health_check(self) -> bool:
-        """检查串口是否依然处于打开状态"""
         return self.is_connected and self.serial_conn is not None and self.serial_conn.is_open
 
     def close(self):
-        """安全关闭串口，释放计算机资源"""
         if self.serial_conn and self.serial_conn.is_open:
             self.serial_conn.close()
             self.is_connected = False

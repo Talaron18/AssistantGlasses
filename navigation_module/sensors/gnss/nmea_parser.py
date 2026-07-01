@@ -8,19 +8,10 @@ from utils.logger import get_logger
 logger = get_logger(__name__)
 
 class NMEAParser:
-    """
-    NMEA-0183 协议解析器
-    将字符串转换为字典数据
-    """
     def __init__(self):
         pass
 
     def parse(self, raw_line: str) -> dict:
-        """
-        解析单行 NMEA 数据
-        :param raw_line: 示例 "$GPRMC,083559.00,A,4717.11437,N..."
-        :return: 包含关键信息的字典, 无效数据返回 None
-        """
         if not raw_line or not raw_line.startswith('$'):
             return None
 
